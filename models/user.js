@@ -66,7 +66,11 @@ const userSchema = new mongoose.Schema({
     type: String // Facebook username of the user
   },
   // Panier list field (shopping cart)
-  panier_list: [{
+  panier: [{
+    type: mongoose.Types.ObjectId,
+    ref: 'Artwork' // Assuming 'Artwork' is the name of the related model for items in the shopping cart
+  }],
+  likedArtworks: [{
     type: mongoose.Types.ObjectId,
     ref: 'Artwork' // Assuming 'Artwork' is the name of the related model for items in the shopping cart
   }],
