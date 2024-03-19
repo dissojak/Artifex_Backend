@@ -1,6 +1,5 @@
 const express = require("express");
 const HC = require("../controller/HackatonController");
-const upload = require("../upload");
 const { check } = require("express-validator");
 const router = express.Router();
 

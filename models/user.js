@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     unique: true, // Email must be unique
   },
   // Password field
-  password: {
+  pw: {
     type: String,
     required: true, // Password is required
     minlength: [3, 'Password must be at least 3 characters long'], // Minimum length of password
@@ -37,7 +37,6 @@ const userSchema = new mongoose.Schema({
   // Profile image field
   profile_image: {
     type: String,
-    default: './images/default_profile_img.jpg' // Default profile image need to be in that path in frontend
   },
   // Banned field
   banned: {
@@ -67,10 +66,6 @@ const userSchema = new mongoose.Schema({
   },
   // Panier list field (shopping cart)
   panier: [{
-    type: mongoose.Types.ObjectId,
-    ref: 'Artwork' // Assuming 'Artwork' is the name of the related model for items in the shopping cart
-  }],
-  likedArtworks: [{
     type: mongoose.Types.ObjectId,
     ref: 'Artwork' // Assuming 'Artwork' is the name of the related model for items in the shopping cart
   }],

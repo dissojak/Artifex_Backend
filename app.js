@@ -9,7 +9,6 @@ const HttpError = require("./models/http-error");
 const user = require("./routes/user");
 const team = require("./routes/team");
 const hackaton = require("./routes/hackaton");
-const upload = require('./upload');
 
 const app = express();
 
@@ -65,7 +64,7 @@ cloudinary.config({
 
 mongoose
   .connect(
-    "mongodb+srv://dissojak:stoondissojakb2a@stoon.r8tcyqv.mongodb.net/hackaton?retryWrites=true&w=majority"
+    "mongodb+srv://dissojak:stoondissojakb2a@stoon.r8tcyqv.mongodb.net/ARTIFEX?retryWrites=true&w=majority"
   )
   .then(() => {
     app.listen(8000);
