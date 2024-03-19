@@ -34,7 +34,11 @@ const artworkSchema = new mongoose.Schema({
     type: String,
     enum: ['public', 'private'], // Type can only be 'public' or 'private'
     default: 'public' // Default type is 'public'
-  }
+  },
+  exclusive:{
+    type : Boolean,
+    default: false,
+  },
 });
 
 artworkSchema.plugin(uniqueValidator);
