@@ -69,6 +69,19 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: 'Artwork' // Assuming 'Artwork' is the name of the related model for items in the shopping cart
   }],
+  //for artist order
+  normalPrice: {
+    type: Number,
+  },
+  // Price for rapid service
+  rapidPrice: {
+    type: Number,
+  },
+  // this define if the order option for this artist is open or not ! 
+  orderStatus:{
+    type :Boolean,
+    default: false,
+  },
   // Creation timestamp
   createdAt: {
     type: Date,
