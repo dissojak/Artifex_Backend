@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 
 
-const savedArtworkSchema = new mongoose.Schema({
+const savedArtworksSchema = new mongoose.Schema({
   // Client ID who liked the artwork
   clientId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -17,8 +17,8 @@ const savedArtworkSchema = new mongoose.Schema({
   }
 });
 
-savedArtworkSchema.plugin(uniqueValidator);
+savedArtworksSchema.plugin(uniqueValidator);
 
-const SavedArtwork = mongoose.model('LikedArtwork', savedArtworkSchema);
+const SavedArtworks = mongoose.model('LikedArtwork', savedArtworksSchema);
 
-module.exports = SavedArtwork;
+module.exports = SavedArtworks;

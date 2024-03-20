@@ -7,8 +7,19 @@ const cors = require('cors');
 const HttpError = require("./models/http-error");
 
 const user = require("./routes/user");
-const team = require("./routes/team");
-const hackaton = require("./routes/hackaton");
+const artist = require("./routes/artist");
+const admin = require("./routes/admin");
+const artwork = require("./routes/artwork");
+const review = require("./routes/review");
+const museum = require("./routes/museum");
+const plan = require("./routes/plan");
+const order = require("./routes/order");
+const follow = require("./routes/follow");
+const category= require("./routes/category");
+const analytics = require("./routes/analytics");
+const report= require("./routes/report");
+
+
 
 const app = express();
 
@@ -31,10 +42,19 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/user", user);
-app.use("/api/user", team);
-app.use("/api/admin", team);
-app.use("/api/hackaton", hackaton);
-// app.use('/api/hackaton', upload);
+app.use("/api/artist", artist);
+app.use("/api/admin", admin);
+app.use("/api/artwork", artwork);
+app.use("/api/review", review);
+app.use("/api/museum",museum);
+app.use("/api/plan", plan);
+app.use("/api/order", order);
+app.use("/api/follow", follow);
+app.use("/api/category", category);
+app.use("/api/analysis", analytics);
+app.use("/api/report", report);
+
+
 
 app.use((req, res, next) => {
   const error = new HttpError("Could not find this route !", 404);
