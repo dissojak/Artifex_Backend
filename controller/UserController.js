@@ -70,6 +70,8 @@ exports.signupUser = async (req, res, next) => {
   });
 };
 
+// -----------------------------------------------------------------------------------------------------
+
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
 // @access  Public
@@ -96,7 +98,7 @@ exports.authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 exports.registerUser = asyncHandler(async (req, res) => {
-  const { username, email, pw } = req.body;
+  const { username, email, pw , userType } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -105,11 +107,29 @@ exports.registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  const user = await User.create({
-    username,
+  let userData = {
+    username: username.toLowerCase(),
     email,
     pw,
-  });
+    userType,
+    banned: false,
+  };
+
+  // Add additional fields based on user type
+  if (userType === 'artist') {
+    userData = {
+      ...userData,
+      instagram: req.body.instagram,
+      twitter: req.body.twitter,
+      linkedin: req.body.linkedin,
+      facebook: req.body.facebook,
+      normalPrice: req.body.normalPrice,
+      rapidPrice: req.body.rapidPrice,
+      orderStatus: req.body.orderStatus,
+    };
+  }
+
+  const user = await User.create(userData);
 
   if (user) {
     generateToken(res, user._id);
@@ -118,6 +138,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
+      userType: user.userType,
     });
   } else {
     res.status(400);
