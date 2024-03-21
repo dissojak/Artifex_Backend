@@ -180,6 +180,7 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 
   if (user) {
     res.json({
+      msg: 'User profile',
       _id: user._id,
       username: user.username,
       email: user.email,
@@ -194,10 +195,10 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id);
-
+  const { username,email }=req.body;
   if (user) {
-    user.username = req.body.username || user.username;
-    user.email = req.body.email || user.email;
+    user.username = username || user.username;
+    user.email = email || user.email;
 
     if (req.body.pw) {
       user.pw = req.body.pw;
