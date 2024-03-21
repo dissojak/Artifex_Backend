@@ -5,6 +5,7 @@ const LikedArtworks = require("../models/likedArtworks");
 const SavedArtworks = require("../models/savedArtworks");
 const asyncHandler = require("express-async-handler");
 const GT = require("../utils/generateToken.js");
+const bcrypt = require("bcryptjs");
 
 exports.signupAdmin = async (req, res, next) => {
   const errors = validationResult(req);
@@ -204,8 +205,23 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/users/profile
 // @access  Private
 exports.updateUserProfile = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user._id);
-  const { username, email , newPw , oldPw} = req.body;
+  const { username, email, newPw, oldPw } = req.body;
+
+  // Check if none of the required fields are provided
+  if (!username && !email && !newPw) {
+    return next(new HttpError("Invalid Data", 400));
+  }
+
+  // this to not select pw when updating username or email to not
+  // get an error cuz the pw will be >20 , so we just select it when
+  // we get pw from the frontend
+  let user;
+  if (newPw) {
+    user = await User.findById(req.user._id).select("+pw");
+  } else {
+    user = await User.findById(req.user._id);
+  }
+
   if (user) {
     user.username = username || user.username;
     user.email = email || user.email;
@@ -213,19 +229,29 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
     // we still to make verification of last password before updating
     // to new password , so we need to get the old password from
     // body and verify it with the one in DB before updating to the
-    // new Password !!! 
+    // new Password !!!
     //--------- USE THAT oldPw IN BODY-PARSER ------------
-    if (newPw) {
-      user.pw = newPw;
+
+    // Check if newPw is provided and oldPw exists
+    if (newPw && oldPw) {
+      // Check if oldPw matches the current password stored in the database
+      // Use matchPassword() to crypt the pw to make test successfully
+      if (await user.matchPassword(oldPw)) {
+        // If it matches, update the password to newPw
+        user.pw = newPw;
+      } else {
+        // If oldPw does not match, return an error
+        return next(new HttpError("Invalid old password", 401));
+      }
     }
 
     const updatedUser = await user.save();
 
     let msg;
     if (username) {
-      msg = "username updated successfully `${username}`";
+      msg = `username updated successfully to ${username}`;
     } else if (email) {
-      msg = "email updated successfully `${email}`";
+      msg = `email updated successfully ${email}`;
     }
 
     res.json({
@@ -233,7 +259,7 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
       _id: updatedUser._id,
       username: updatedUser.username,
       email: updatedUser.email,
-      pw,
+      password: newPw,
     });
   } else {
     return next(new HttpError("User not found", 404));
