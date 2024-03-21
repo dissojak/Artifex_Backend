@@ -19,6 +19,6 @@ router.post("/login", UC.authUser);
 router.post("/logout", UC.logoutUser);
 
 router.get("/getUser", MW.protect, UC.getUserProfile);
-router.put("/SettingsUpdate", MW.protect, UC.updateUserProfile);
+router.put("/settings", MW.protect, UC.updateUserProfile);
 
 module.exports = router;

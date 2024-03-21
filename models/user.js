@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 
 // Define the user schema
 const userSchema = new mongoose.Schema(
@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema(
       required: true, // Password is required
       minlength: [3, "Password must be at least 3 characters long"], // Minimum length of password
       maxlength: [20, "Password cannot be longer than 20 characters"], // Maximum length of password
+      select: false,
     },
     // User type field
     userType: {
@@ -108,15 +109,19 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 // Encrypt password using bcrypt
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('pw')) {
-    next();
+userSchema.pre("save", async function (next) {
+  if (this.isModified("pw")) {
+    const salt = await bcrypt.genSalt(10);
+    this.pw = await bcrypt.hash(this.pw, salt);
+    // Update the updatedAt field whenever the password is modified
+    this.updatedAt = Date.now(); // Set updatedAt to the current timestamp
   }
-
-  const salt = await bcrypt.genSalt(10);
-  this.pw = await bcrypt.hash(this.pw, salt);
+  // Update the updatedAt field if username or email is modified
+  if (this.isModified("username") || this.isModified("email")) {
+    this.updatedAt = Date.now(); // Set updatedAt to the current timestamp
+  }
+  next();
 });
-
 
 // Apply the unique validator plugin to the schema
 userSchema.plugin(uniqueValidator);

@@ -3,8 +3,8 @@ const { validationResult } = require("express-validator");
 const User = require("../models/user");
 const LikedArtworks = require("../models/likedArtworks");
 const SavedArtworks = require("../models/savedArtworks");
-const asyncHandler = require('express-async-handler');
-const GT = require('../utils/generateToken.js');
+const asyncHandler = require("express-async-handler");
+const GT = require("../utils/generateToken.js");
 
 exports.signupAdmin = async (req, res, next) => {
   const errors = validationResult(req);
@@ -12,12 +12,12 @@ exports.signupAdmin = async (req, res, next) => {
     console.log(errors);
     return next(new HttpError("Invalid Inputs , check your data ", 422));
   }
-  const { email, username, pw} = req.body;
+  const { email, username, pw } = req.body;
   const createdAdmin = new User({
     email,
     username: username.toLowerCase(),
     pw,
-    userType:"admin",
+    userType: "admin",
     banned: false,
   });
   try {
@@ -38,18 +38,28 @@ exports.signupUser = async (req, res, next) => {
     console.log(errors);
     return next(new HttpError("Invalid Inputs , check your data ", 422));
   }
-  const { email, username, pw, userType, phone_number, instagram, twitter, linkedin, facebook } = req.body;
+  const {
+    email,
+    username,
+    pw,
+    userType,
+    phone_number,
+    instagram,
+    twitter,
+    linkedin,
+    facebook,
+  } = req.body;
   const createdClient = new User({
     email,
     username: username.toLowerCase(),
     pw,
     userType,
     banned: false,
-    phone_number: phone_number ,
-    instagram: instagram ,
-    twitter: twitter ,
-    linkedin: linkedin ,
-    facebook: facebook ,
+    phone_number: phone_number,
+    instagram: instagram,
+    twitter: twitter,
+    linkedin: linkedin,
+    facebook: facebook,
     panier: [], // Initialize empty panier array for client
   });
   try {
@@ -59,9 +69,9 @@ exports.signupUser = async (req, res, next) => {
     return next(new HttpError("Creating Client failed ! ", 500));
   }
   let message;
-  if (userType === 'client') {
+  if (userType === "client") {
     message = "Client has been added successfully !";
-  } else if (userType === 'artist') {
+  } else if (userType === "artist") {
     message = "Artist has been added successfully !";
   }
   res.status(201).json({
@@ -77,11 +87,11 @@ exports.signupUser = async (req, res, next) => {
 // @access  Public
 exports.authUser = asyncHandler(async (req, res, next) => {
   const { username, email, pw } = req.body;
-let user
-  if (username){
+  let user;
+  if (username) {
     user = await User.findOne({ username });
   }
-  if (email){
+  if (email) {
     user = await User.findOne({ email });
   }
 
@@ -94,7 +104,7 @@ let user
       email: user.email,
     });
   } else {
-    return next(new HttpError('Invalid email or password', 401));
+    return next(new HttpError("Invalid (username|email) or password", 401));
   }
 });
 
@@ -104,15 +114,15 @@ let user
 exports.registerUser = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(new HttpError('Invalid Inputs, check your data', 422));
+    return next(new HttpError("Invalid Inputs, check your data", 422));
   }
-  
+
   const { username, email, pw, userType } = req.body;
 
   const userExists = await User.findOne({ email });
 
   if (userExists) {
-    return next(new HttpError('User already exists', 400));
+    return next(new HttpError("User already exists", 400));
   }
 
   let userData = {
@@ -125,7 +135,7 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   };
 
   // Add additional fields based on user type
-  if (userType === 'artist') {
+  if (userType === "artist") {
     userData = {
       ...userData,
       instagram: req.body.instagram,
@@ -144,9 +154,9 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
     GT.generateToken(res, user._id);
 
     let msg;
-    if (userType === 'client') {
+    if (userType === "client") {
       msg = "Client has been added successfully !";
-    } else if (userType === 'artist') {
+    } else if (userType === "artist") {
       msg = "Artist has been added successfully !";
     }
     res.status(201).json({
@@ -157,7 +167,7 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
       userType: user.userType,
     });
   } else {
-    return next(new HttpError('Invalid user data', 400));
+    return next(new HttpError("Invalid user data", 400));
   }
 });
 
@@ -165,11 +175,11 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
 // @route   POST /api/users/logout
 // @access  Public
 exports.logoutUser = (req, res) => {
-  res.cookie('jwt', '', {
+  res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
   });
-  res.status(200).json({ message: 'Logged out successfully' });
+  res.status(200).json({ message: "Logged out successfully" });
 };
 
 // @desc    Get user profile
@@ -180,13 +190,13 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 
   if (user) {
     res.json({
-      msg: 'User profile',
+      msg: "User profile",
       _id: user._id,
       username: user.username,
       email: user.email,
     });
   } else {
-    return next(new HttpError('User not found', 404));
+    return next(new HttpError("User not found", 404));
   }
 });
 
@@ -195,23 +205,37 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id);
-  const { username,email }=req.body;
+  const { username, email , newPw , oldPw} = req.body;
   if (user) {
     user.username = username || user.username;
     user.email = email || user.email;
 
-    if (req.body.pw) {
-      user.pw = req.body.pw;
+    // we still to make verification of last password before updating
+    // to new password , so we need to get the old password from
+    // body and verify it with the one in DB before updating to the
+    // new Password !!! 
+    //--------- USE THAT oldPw IN BODY-PARSER ------------
+    if (newPw) {
+      user.pw = newPw;
     }
 
     const updatedUser = await user.save();
 
+    let msg;
+    if (username) {
+      msg = "username updated successfully `${username}`";
+    } else if (email) {
+      msg = "email updated successfully `${email}`";
+    }
+
     res.json({
+      msg,
       _id: updatedUser._id,
       username: updatedUser.username,
       email: updatedUser.email,
+      pw,
     });
   } else {
-    return next(new HttpError('User not found', 404));
+    return next(new HttpError("User not found", 404));
   }
 });
