@@ -4,7 +4,7 @@ const User = require("../models/user");
 const LikedArtworks = require("../models/likedArtworks");
 const SavedArtworks = require("../models/savedArtworks");
 const asyncHandler = require('express-async-handler');
-const generateToken = require('../utils/generateToken.js').default;
+const GT = require('../utils/generateToken.js');
 
 exports.signupAdmin = async (req, res, next) => {
   const errors = validationResult(req);
@@ -75,13 +75,18 @@ exports.signupUser = async (req, res, next) => {
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
 // @access  Public
-exports.authUser = asyncHandler(async (req, res) => {
-  const { email, pw } = req.body;
-
-  const user = await User.findOne({ email });
+exports.authUser = asyncHandler(async (req, res, next) => {
+  const { username, email, pw } = req.body;
+let user
+  if (username){
+    user = await User.findOne({ username });
+  }
+  if (email){
+    user = await User.findOne({ email });
+  }
 
   if (user && (await user.matchPassword(pw))) {
-    generateToken(res, user._id);
+    GT.generateToken(res, user._id);
 
     res.json({
       _id: user._id,
@@ -89,28 +94,32 @@ exports.authUser = asyncHandler(async (req, res) => {
       email: user.email,
     });
   } else {
-    res.status(401);
-    throw new Error('Invalid email or password');
+    return next(new HttpError('Invalid email or password', 401));
   }
 });
 
 // @desc    Register a new user
 // @route   POST /api/users
 // @access  Public
-exports.registerUser = asyncHandler(async (req, res) => {
-  const { username, email, pw , userType } = req.body;
+exports.registerUser = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError('Invalid Inputs, check your data', 422));
+  }
+  
+  const { username, email, pw, userType } = req.body;
 
   const userExists = await User.findOne({ email });
 
   if (userExists) {
-    res.status(400);
-    throw new Error('User already exists');
+    return next(new HttpError('User already exists', 400));
   }
 
   let userData = {
     username: username.toLowerCase(),
     email,
     pw,
+    panier: [],
     userType,
     banned: false,
   };
@@ -132,17 +141,23 @@ exports.registerUser = asyncHandler(async (req, res) => {
   const user = await User.create(userData);
 
   if (user) {
-    generateToken(res, user._id);
+    GT.generateToken(res, user._id);
 
+    let msg;
+    if (userType === 'client') {
+      msg = "Client has been added successfully !";
+    } else if (userType === 'artist') {
+      msg = "Artist has been added successfully !";
+    }
     res.status(201).json({
+      msg,
       _id: user._id,
       username: user.username,
       email: user.email,
       userType: user.userType,
     });
   } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+    return next(new HttpError('Invalid user data', 400));
   }
 });
 
@@ -160,7 +175,7 @@ exports.logoutUser = (req, res) => {
 // @desc    Get user profile
 // @route   GET /api/users/profile
 // @access  Private
-exports.getUserProfile = asyncHandler(async (req, res) => {
+exports.getUserProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
@@ -170,15 +185,14 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
       email: user.email,
     });
   } else {
-    res.status(404);
-    throw new Error('User not found');
+    return next(new HttpError('User not found', 404));
   }
 });
 
 // @desc    Update user profile
 // @route   PUT /api/users/profile
 // @access  Private
-exports.updateUserProfile = asyncHandler(async (req, res) => {
+exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
@@ -197,7 +211,6 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
       email: updatedUser.email,
     });
   } else {
-    res.status(404);
-    throw new Error('User not found');
+    return next(new HttpError('User not found', 404));
   }
 });

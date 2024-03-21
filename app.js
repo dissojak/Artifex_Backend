@@ -1,5 +1,3 @@
-// import { notFound, errorHandler } from './middleware/errorMiddleware.js';
-// const notFound=require('./middleware/errorMiddleware.js');
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -7,9 +5,6 @@ const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 
 const cookieParser = require('cookie-parser');
-const notFound = require('./middleware/errorMiddleware');
-const errorHandler = require('./middleware/errorHandler');
-
 const HttpError = require("./models/http-error");
 
 const user = require("./routes/user");
@@ -81,10 +76,6 @@ cloudinary.config({
   api_key: '513133278582537',
   api_secret: '0UgeZPnsrmRfbWu-u8eZxo-W0uk',
 });
-
-
-app.use(notFound);
-app.use(errorHandler);
 
 
 // const CLOUDINARY_URL="CLOUDINARY_URL=cloudinary://513133278582537:0UgeZPnsrmRfbWu-u8eZxo-W0uk@duvougrqx";

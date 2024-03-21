@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const RC = require("../controllers/ReviewController");
+const RC = require("../controller/ReviewController");
 
 // Get reviews by artwork ID
 router.get("/artwork/:artworkId", RC.getReviewsByArtworkId);
