@@ -1,8 +1,14 @@
+// import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+// const notFound=require('./middleware/errorMiddleware.js');
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
+
+const cookieParser = require('cookie-parser');
+const notFound = require('./middleware/errorMiddleware');
+const errorHandler = require('./middleware/errorHandler');
 
 const HttpError = require("./models/http-error");
 
@@ -26,6 +32,7 @@ const app = express();
 app.use(cors());
 
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -35,7 +42,7 @@ app.use((req, res, next) => {
   );
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, PATCH, DELETE"
+    "GET, POST, PUT, PATCH, DELETE "
   );
   // res.setHeader("Content-Type", "multipart/form-data");
   next();
@@ -76,6 +83,8 @@ cloudinary.config({
 });
 
 
+app.use(notFound);
+app.use(errorHandler);
 
 
 // const CLOUDINARY_URL="CLOUDINARY_URL=cloudinary://513133278582537:0UgeZPnsrmRfbWu-u8eZxo-W0uk@duvougrqx";
