@@ -5,7 +5,6 @@ const LikedArtworks = require("../models/likedArtworks");
 const SavedArtworks = require("../models/savedArtworks");
 const asyncHandler = require("express-async-handler");
 const GT = require("../utils/generateToken.js");
-const bcrypt = require("bcryptjs");
 
 exports.signupAdmin = async (req, res, next) => {
   const errors = validationResult(req);
@@ -90,10 +89,11 @@ exports.authUser = asyncHandler(async (req, res, next) => {
   const { username, email, pw } = req.body;
   let user;
   if (username) {
-    user = await User.findOne({ username });
-  }
-  if (email) {
-    user = await User.findOne({ email });
+    const name = username.toLowerCase();
+    user = await User.findOne({ username:name }).select("+pw");
+  }else if (email) {
+    console.log(email);
+    user = await User.findOne({ email }).select("+pw");
   }
 
   if (user && (await user.matchPassword(pw))) {
@@ -105,7 +105,7 @@ exports.authUser = asyncHandler(async (req, res, next) => {
       email: user.email,
     });
   } else {
-    return next(new HttpError("Invalid (username|email) or password", 401));
+    return next(new HttpError("Invalid (username|email) ,password", 401));
   }
 });
 

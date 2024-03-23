@@ -87,7 +87,7 @@ mongoose
     "mongodb+srv://dissojak:stoondissojakb2a@stoon.r8tcyqv.mongodb.net/ARTIFEX?retryWrites=true&w=majority"
   )
   .then(() => {
-    app.listen(8000);
+    app.listen(5000);
   })
   .catch((err) => {
     console.log("MongoDB connection error:",err);
