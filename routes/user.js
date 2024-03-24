@@ -56,8 +56,7 @@ the clients data.
 */
 
 router.get("/getClients", MW.protect, UC.getClients);
-router.get("/getLikedArtworks", MW.protect, UC.getLikedArtworks);
-router.get("/getSavedArtworks", MW.protect, UC.getSavedArtworks);
 router.get("/getPanier", MW.protect, UC.getPanier);
+router.post("/addArtworkToPanier",MW.protect, UC.addArtworkToPanier);
 
 module.exports = router;

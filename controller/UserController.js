@@ -1,8 +1,6 @@
 const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const User = require("../models/user");
-const LikedArtworks = require("../models/likedArtworks");
-const SavedArtworks = require("../models/savedArtworks");
 const Artwork = require("../models/artwork");
 const asyncHandler = require("express-async-handler");
 const GT = require("../utils/generateToken.js");
@@ -295,50 +293,6 @@ exports.update_ProfileImage = async (req, res) => {
 };
 
 /**
- * @desc    Get all liked artworks by a user
- * @route   GET /api/user/getLikedArtworks
- * @access  Private
- */
-exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
-  const clientId = req.user._id;
-  let likedArtworks;
-  try {
-    likedArtworks = await LikedArtworks.find({ clientId });
-  } catch (err) {
-    return next(new HttpError(" Failed to retrieve liked artworks ! ", 500));
-  }
-  if (likedArtworks.length === 0) {
-    return res.json({ msg: "vide", likedArtworks });
-  }
-  res.json({
-    msg: "Artworks liked retrieved successfully",
-    likedArtworks,
-  });
-});
-
-/**
- * @desc    Get all saved artworks by a user
- * @route   GET /api/user/getSavedArtworks
- * @access  Private
- */
-exports.getSavedArtworks = asyncHandler(async (req, res, next) => {
-  const clientId = req.user._id;
-  let savedArtworks;
-  try {
-    savedArtworks = await SavedArtworks.find({ clientId });
-  } catch (err) {
-    return next(new HttpError(" Failed to retrieve saved artworks ! ", 500));
-  }
-  if (savedArtworks.length === 0) {
-    return res.json({ msg: "vide", savedArtworks });
-  }
-  res.json({
-    msg: "Artworks saved retrieved successfully",
-    savedArtworks,
-  });
-});
-
-/**
  * @desc    Get panier of user
  * @route   GET /api/user/getPanier
  * @access  Private
@@ -380,4 +334,35 @@ exports.getPanier = asyncHandler(async (req, res, next) => {
     msg: "Artworks retrieved successfully",
     artworks: artworks,
   });
+});
+
+/**
+ * @desc    add artwork to panier of user
+ * @route   POST /api/user/addArtworkToPanier
+ * @access  Private
+ */
+exports.addArtworkToPanier = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const artworkId = req.body.artworkId;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new HttpError("User not found", 404);
+    }
+
+    // Check if artworkId is valid
+    const artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      throw new HttpError("Artwork not found", 404);
+    }
+
+    // Add artworkId to the user's panier
+    user.panier.push(artworkId);
+    await user.save();
+
+    res.status(200).json({ message: "Artwork added to panier successfully" });
+  } catch (error) {
+    next(new HttpError("Failed to add artwork to panier", 500));
+  }
 });
