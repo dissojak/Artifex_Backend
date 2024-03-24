@@ -74,6 +74,11 @@ const userSchema = new mongoose.Schema(
         ref: "Artwork", // Assuming 'Artwork' is the name of the related model for items in the shopping cart
       },
     ],
+    // Artist Plan ID referencing the Plan model
+    CurrentPlan_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan", // Assuming 'Plan' is the name of the related model
+    },
     //for artist order
     normalPrice: {
       type: Number,
