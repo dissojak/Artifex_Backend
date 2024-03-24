@@ -33,9 +33,11 @@ exports.signupAdmin = async (req, res, next) => {
   });
 };
 
-// @desc    Auth user & get token
-// @route   POST /api/users/auth
-// @access  Public
+/**
+ * @desc    Authenticate user and generate token
+ * @route   POST /api/user/auth
+ * @access  Public
+ */
 exports.authUser = asyncHandler(async (req, res, next) => {
   const { username, email, pw } = req.body;
   let user;
@@ -60,9 +62,11 @@ exports.authUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-// @desc    Register a new user
-// @route   POST /api/user/signup
-// @access  Public
+/**
+ * @desc    Register a new user
+ * @route   POST /api/user/signup
+ * @access  Public
+ */
 exports.registerUser = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -123,9 +127,11 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-// @desc    Logout user / clear cookie
-// @route   POST /api/user/logout
-// @access  Public
+/**
+ * @desc    Logout user and clear cookie
+ * @route   POST /api/user/logout
+ * @access  Public
+ */
 exports.logoutUser = (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
@@ -134,9 +140,11 @@ exports.logoutUser = (req, res) => {
   res.status(200).json({ msg: "Logged out successfully" });
 };
 
-// @desc    Get user profile
-// @route   GET /api/user/getUser
-// @access  Private
+/**
+ * @desc    Get user profile
+ * @route   GET /api/user/getUser
+ * @access  Private
+ */
 exports.getUserProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id);
 
@@ -154,9 +162,11 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
   }
 });
 
-// @desc    Update user profile
-// @route   PUT /api/user/settings
-// @access  Private
+/**
+ * @desc    Update user profile
+ * @route   PUT /api/user/settings
+ * @access  Private
+ */
 exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -224,9 +234,11 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   }
 });
 
-// @desc    Get all clients
-// @route   GET /api/user/GetClients
-// @access  Private
+/**
+ * @desc    Get all clients
+ * @route   GET /api/user/getClients
+ * @access  Private
+ */
 exports.getClients = asyncHandler(async (req, res, next) => {
   try {
     const clients = await User.find({ userType: "client" });
@@ -247,9 +259,11 @@ exports.getClients = asyncHandler(async (req, res, next) => {
   }
 });
 
-// @desc    Update User Profile Picture
-// @route   PATCH /api/user/update-profile-image
-// @access  Private
+/**
+ * @desc    Update user profile image
+ * @route   PATCH /api/user/update-profile-image
+ * @access  Private
+ */
 
 exports.update_ProfileImage = async (req, res) => {
   try {
@@ -280,10 +294,11 @@ exports.update_ProfileImage = async (req, res) => {
   }
 };
 
-// @desc    Get all liked artworks by a user
-// @route   GET /api/user/getLikedArtworks
-// @access  Private
-
+/**
+ * @desc    Get all liked artworks by a user
+ * @route   GET /api/user/getLikedArtworks
+ * @access  Private
+ */
 exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
   const clientId = req.user._id;
   let likedArtworks;
@@ -301,10 +316,11 @@ exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Get all saved artworks by a user
-// @route   GET /api/user/getSavedArtworks
-// @access  Private
-
+/**
+ * @desc    Get all saved artworks by a user
+ * @route   GET /api/user/getSavedArtworks
+ * @access  Private
+ */
 exports.getSavedArtworks = asyncHandler(async (req, res, next) => {
   const clientId = req.user._id;
   let savedArtworks;
@@ -322,10 +338,11 @@ exports.getSavedArtworks = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Get panier of user
-// @route   GET /api/user/getPanier
-// @access  Private
-
+/**
+ * @desc    Get panier of user
+ * @route   GET /api/user/getPanier
+ * @access  Private
+ */
 exports.getPanier = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   let user;
