@@ -34,6 +34,11 @@ const artworkSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User' // Assuming 'User' is the name of the related model
   },
+  // Artist Plan ID referencing the Plan model
+  CurrentPlan_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Plan' // Assuming 'Plan' is the name of the related model
+  },
   // Type of the artwork (public or private)
   type: {
     type: String,
