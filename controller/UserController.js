@@ -146,7 +146,7 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      createdAt:  user.createdAt.toLocaleString(),
+      createdAt: user.createdAt.toLocaleString(),
       updatedAt: user.updatedAt.toLocaleString(),
     });
   } else {
@@ -253,6 +253,12 @@ exports.getClients = asyncHandler(async (req, res, next) => {
 
 exports.update_ProfileImage = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors);
+      return next(new HttpError("Invalid Inputs , check your data ", 422));
+    }
+
     const userId = req.user._id;
     const { imageUrl } = req.body;
 
@@ -351,11 +357,10 @@ exports.getPanier = asyncHandler(async (req, res, next) => {
 
   // If no artworks are found for the provided IDs, return an empty array
   if (!artworks || artworks.length === 0) {
-    return res.json({msg: "vide",panier:[]});
+    return res.json({ msg: "vide", panier: [] });
   }
   res.json({
     msg: "Artworks retrieved successfully",
     artworks: artworks,
   });
 });
-
