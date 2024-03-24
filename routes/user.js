@@ -34,6 +34,13 @@ router.put(
   UC.updateUserProfile
 );
 
+router.patch(
+  "/update-profile-image",
+  check("imageUrl").isURL().withMessage("ImageArtwork must be a valid URL"),
+  MW.protect,
+  UC.update_ProfileImage
+);
+
 /*
 This route is designed to retrieve information about clients.
 It is protected by authentication middleware (MW.protect),
@@ -49,7 +56,6 @@ the clients data.
 */
 
 router.get("/getClients", MW.protect, UC.getClients);
-router.patch("/update-profile-image", MW.protect, UC.update_ProfileImage);
 router.get("/getLikedArtworks", MW.protect, UC.getLikedArtworks);
 router.get("/getSavedArtworks", MW.protect, UC.getSavedArtworks);
 router.get("/getPanier", MW.protect, UC.getPanier);
