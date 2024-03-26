@@ -3,7 +3,7 @@ const uniqueValidator = require('mongoose-unique-validator');
 
 const analyticsSchema = new mongoose.Schema({
   // Artist ID
-  artworkId: {
+  artistId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Artist', // Assuming 'Artist' is the name of the Artist model
     required: true

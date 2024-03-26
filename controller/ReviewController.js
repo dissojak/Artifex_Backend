@@ -5,6 +5,7 @@ const Review = require("../models/review");
 const Artwork = require("../models/artwork");
 const Analytics = require("../models/analytics");
 const ReportReview = require("../models/reportReview");
+const mongoose = require("mongoose");
 
 // Add your controller methods here
 
@@ -25,18 +26,25 @@ exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
   try {
     reviews = await Review.find({ artworkId });
   } catch (err) {
-    return next(new HttpError('Fetching reviews failed, please try again later.', 500));
+    return next(
+      new HttpError("Fetching reviews failed, please try again later.", 500)
+    );
   }
 
   if (!reviews || reviews.length === 0) {
-    return next(new HttpError('Could not find reviews for the provided artwork ID.', 404));
+    return next(
+      new HttpError("Could not find reviews for the provided artwork ID.", 404)
+    );
   }
 
-  res.status(200).json({ reviews: reviews.map(review => review.toObject({ getters: true })) });
+  res.status(200).json({
+    reviews: reviews.map((review) => review.toObject({ getters: true })),
+  });
 });
 
 /**
- * @desc     Add a comment to a review
+ * @desc     Add a comment to a review Or Update it
+ * @function Update and Add
  * @method   POST
  * @route    POST /api/review/addComment
  * @params   artistId, artworkId, comment
@@ -56,7 +64,7 @@ exports.addComment = async (req, res, next) => {
 
   try {
     review = await Review.findOne({ clientId, artworkId });
-    
+
     // Find or create analytics for the artwork
     analytics = await Analytics.findOne({ artistId });
 
@@ -69,16 +77,18 @@ exports.addComment = async (req, res, next) => {
       review = new Review({
         clientId,
         artworkId,
-        comment
+        comment,
       });
       analytics.totalReviews += 1;
+      analytics.numberOfComments += 1;
     } else {
+      if (review.comment === "") {
+        analytics.numberOfComments += 1;
+      }
       // If the review exists, update the comment
       review.comment = comment;
     }
 
-    analytics.numberOfComments += 1;
-    
     // Save the review and analytics changes within a session
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -93,7 +103,6 @@ exports.addComment = async (req, res, next) => {
     return next(new HttpError("Failed to add comment", 500));
   }
 };
-
 
 // Delete a comment from a review
 exports.deleteComment = async (req, res, next) => {

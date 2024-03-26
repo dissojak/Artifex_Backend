@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { check } = require("express-validator");
 const RC = require("../controller/ReviewController");
 const MW = require("../middleware/authMiddleware");
 
@@ -7,7 +8,7 @@ const MW = require("../middleware/authMiddleware");
 router.get("/:artworkId",MW.protect, RC.getReviewsByArtworkId);
 
 // Add a comment to a review
-router.post("/addComment",MW.protect, RC.addComment);
+router.post("/addComment",[check("comment").isLength({ min: 2, max: 50 })],MW.protect, RC.addComment);
 
 // Delete a comment from a review
 router.delete("/deleteComment/:reviewId/:commentId", RC.deleteComment);
