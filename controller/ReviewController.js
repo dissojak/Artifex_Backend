@@ -13,9 +13,22 @@ const ReportReview = require("../models/reportReview");
 //  capturet lel mongoDB w postman w hothom f dousi bech baaed nkhdmou byhom f rapport -------
 
 // Get reviews by artwork ID
-exports.getReviewsByArtworkId = async (req, res, next) => {
-  // Implement your logic here
-};
+exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
+  const artworkId = req.params.artworkId;
+
+  let reviews;
+  try {
+    reviews = await Review.find({ artworkId });
+  } catch (err) {
+    return next(new HttpError('Fetching reviews failed, please try again later.', 500));
+  }
+
+  if (!reviews || reviews.length === 0) {
+    return next(new HttpError('Could not find reviews for the provided artwork ID.', 404));
+  }
+
+  res.status(200).json({ reviews: reviews.map(review => review.toObject({ getters: true })) });
+});
 
 // Add a comment to a review
 exports.addComment = async (req, res, next) => {
