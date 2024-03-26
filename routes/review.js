@@ -9,9 +9,6 @@ router.get("/:artworkId",MW.protect, RC.getReviewsByArtworkId);
 // Add a comment to a review
 router.post("/addComment",MW.protect, RC.addComment);
 
-// Update a comment in a review
-router.patch("/updateComment/:reviewId/:commentId", RC.updateComment);
-
 // Delete a comment from a review
 router.delete("/deleteComment/:reviewId/:commentId", RC.deleteComment);
 

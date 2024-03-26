@@ -37,9 +37,9 @@ exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc     Add a comment to a review
- * @method   Post
+ * @method   POST
  * @route    POST /api/review/addComment
- * @augments artworkId,comment
+ * @params   artistId, artworkId, comment
  * @access   Private
  */
 exports.addComment = async (req, res, next) => {
@@ -48,29 +48,37 @@ exports.addComment = async (req, res, next) => {
     console.log(errors);
     return next(new HttpError("Invalid Inputs, check your data", 422));
   }
-
-  const { artworkId, comment } = req.body;
-  const clientId=req.user._id;
+  const { artistId, artworkId, comment } = req.body;
+  const clientId = req.user._id;
 
   let review;
   let analytics;
 
   try {
     review = await Review.findOne({ clientId, artworkId });
+    
+    // Find or create analytics for the artwork
+    analytics = await Analytics.findOne({ artistId });
+
+    if (!analytics) {
+      analytics = new Analytics({ artistId });
+    }
 
     if (!review) {
+      // If there is no existing review, create a new one
       review = new Review({
         clientId,
         artworkId,
         comment
       });
+      analytics.totalReviews += 1;
     } else {
+      // If the review exists, update the comment
       review.comment = comment;
     }
 
-    // Increment the number of comments in the analytics +1
-    analytics = await Analytics.findOneAndUpdate({}, { $inc: { numberOfComments: 1 } }, { new: true, upsert: true });
-
+    analytics.numberOfComments += 1;
+    
     // Save the review and analytics changes within a session
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -86,11 +94,6 @@ exports.addComment = async (req, res, next) => {
   }
 };
 
-// Update a review
-exports.updateComment = async (req, res, next) => {
-  // Implement your logic here
-  // when you ... , update the analytics
-};
 
 // Delete a comment from a review
 exports.deleteComment = async (req, res, next) => {
