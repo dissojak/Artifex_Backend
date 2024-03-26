@@ -27,6 +27,15 @@ exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
   });
 });
 
+/**
+ * @desc     like an artwork
+ * @function Update
+ * @method   PATCH
+ * @route    PATCH api/liked/saved/likeArtwork
+ * @params   artistId, artworkId
+ * @access   Private
+ */
+
 exports.likeArtwork = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { artworkId, artistId } = req.body;

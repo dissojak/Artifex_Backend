@@ -7,6 +7,7 @@ const { getCategoryNameById } = require("../controller/CategoryController");
 /**
  * @desc    Add new artwork
  * @route   POST /api/artwork/addArtwork
+ * @params  title,description,price,imageArtwork,id_category
  * @access  Private
  */
 exports.addArtwork = asyncHandler(async (req, res, next) => {
@@ -20,7 +21,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
     title,
     description,
     price,
-    ImageArtwork,
+    imageArtwork,
     id_category,
   } = req.body;
 
@@ -30,7 +31,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
       title,
       description,
       price,
-      ImageArtwork,
+      imageArtwork,
       id_category,
       id_artist: artistId,
     });

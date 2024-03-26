@@ -44,9 +44,9 @@ exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc     Add a comment to a review Or Update it
- * @function Update and Add
- * @method   POST
- * @route    POST /api/review/addComment
+ * @function Update or Add
+ * @method   PATCH
+ * @route    PATCH /api/review/addComment
  * @params   artistId, artworkId, comment
  * @access   Private
  */
@@ -71,7 +71,13 @@ exports.addComment = async (req, res, next) => {
     if (!analytics) {
       analytics = new Analytics({ artistId });
     }
-
+    
+    /*but this also will never happen cuz when the user even 
+    unter to check the artwork , it will automaticly create 
+    a review to update the fild view by true , 
+    or even when the artist like the artwork before even seeing it,
+    that will create a new analytics to update the number of likes*/
+    
     if (!review) {
       // If there is no existing review, create a new one
       review = new Review({
@@ -79,13 +85,13 @@ exports.addComment = async (req, res, next) => {
         artworkId,
         comment,
       });
-      analytics.totalReviews += 1;
+      analytics.totaleReviews += 1;
       analytics.numberOfComments += 1;
     } else {
       if (review.comment === "") {
         analytics.numberOfComments += 1;
       }
-      // If the review exists, update the comment
+      // If the review exists, add or update the comment
       review.comment = comment;
     }
 

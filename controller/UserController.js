@@ -34,6 +34,7 @@ exports.signupAdmin = async (req, res, next) => {
 /**
  * @desc    Authenticate user and generate token
  * @route   POST /api/user/auth
+ * @params  username,email,pw(password)
  * @access  Public
  */
 exports.authUser = asyncHandler(async (req, res, next) => {
@@ -63,6 +64,7 @@ exports.authUser = asyncHandler(async (req, res, next) => {
 /**
  * @desc    Register a new user
  * @route   POST /api/user/signup
+ * @params  username,email,pw(password),userType
  * @access  Public
  */
 exports.registerUser = asyncHandler(async (req, res, next) => {
@@ -162,7 +164,8 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc    Update user profile
- * @route   PUT /api/user/settings
+ * @route   PUT /api/user/settings 
+ * @params  username || email || newPw(new password) && oldPw(old password)
  * @access  Private
  */
 exports.updateUserProfile = asyncHandler(async (req, res, next) => {
@@ -260,6 +263,7 @@ exports.getClients = asyncHandler(async (req, res, next) => {
 /**
  * @desc    Update user profile image
  * @route   PATCH /api/user/update-profile-image
+ * @params  imageUrl
  * @access  Private
  */
 
@@ -325,6 +329,7 @@ exports.getPanier = asyncHandler(async (req, res, next) => {
 /**
  * @desc    add artwork to panier of user
  * @route   POST /api/user/addArtworkToPanier
+ * @param   artworkId
  * @access  Private
  */
 exports.addArtworkToPanier = asyncHandler(async (req, res, next) => {
