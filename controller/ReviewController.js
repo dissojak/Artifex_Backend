@@ -1,5 +1,6 @@
 const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
+const asyncHandler = require("express-async-handler");
 const Review = require("../models/review");
 const Artwork = require("../models/artwork");
 const Analytics = require("../models/analytics");
@@ -12,7 +13,11 @@ const ReportReview = require("../models/reportReview");
 //  nthabtou fyha lin nt2kdou mich ne9sa chy w kif tkhdem w testy bel POSTMAN ma tensech taamel
 //  capturet lel mongoDB w postman w hothom f dousi bech baaed nkhdmou byhom f rapport -------
 
-// Get reviews by artwork ID
+/**
+ * @desc    Get reviews by artwork ID
+ * @route   GET /api/review/:artworkId
+ * @access  Private
+ */
 exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
   const artworkId = req.params.artworkId;
 
@@ -30,10 +35,55 @@ exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
   res.status(200).json({ reviews: reviews.map(review => review.toObject({ getters: true })) });
 });
 
-// Add a comment to a review
+/**
+ * @desc     Add a comment to a review
+ * @method   Post
+ * @route    POST /api/review/addComment
+ * @augments artworkId,comment
+ * @access   Private
+ */
 exports.addComment = async (req, res, next) => {
-  // Implement your logic here
-  //   update the analytics
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    return next(new HttpError("Invalid Inputs, check your data", 422));
+  }
+
+  const { artworkId, comment } = req.body;
+  const clientId=req.user._id;
+
+  let review;
+  let analytics;
+
+  try {
+    review = await Review.findOne({ clientId, artworkId });
+
+    if (!review) {
+      review = new Review({
+        clientId,
+        artworkId,
+        comment
+      });
+    } else {
+      review.comment = comment;
+    }
+
+    // Increment the number of comments in the analytics +1
+    analytics = await Analytics.findOneAndUpdate({}, { $inc: { numberOfComments: 1 } }, { new: true, upsert: true });
+
+    // Save the review and analytics changes within a session
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    await review.save({ session });
+    await analytics.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({ message: "Comment added successfully" });
+  } catch (err) {
+    console.error(err);
+    return next(new HttpError("Failed to add comment", 500));
+  }
 };
 
 // Update a review
