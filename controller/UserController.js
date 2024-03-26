@@ -299,42 +299,28 @@ exports.update_ProfileImage = async (req, res) => {
  */
 exports.getPanier = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
-  let user;
+
   try {
-    user = await User.findById(userId);
+    const user = await User.findById(userId).populate('panier');
+    
+    if (!user) {
+      return next(new HttpError("User not found", 404));
+    }
+
+    const artworks = user.panier;
+    if (!artworks || artworks.length === 0) {
+      return res.json({ msg: "vide", panier: [] });
+    }
+
+    res.json({
+      msg: "Artworks retrieved successfully",
+      artworks,
+    });
   } catch (error) {
     return next(new HttpError("Failed to retrieve user panier", 500));
   }
-
-  if (!user) {
-    return next(new HttpError("User not found", 404));
-  }
-
-  const artworkIds = user.panier;
-  let artworks;
-  try {
-    /*
-    select all artworks from the database using their IDs stored 
-    in the artworkIds array. This approach, using $in operator 
-    in MongoDB, allows you to fetch multiple artworks in a 
-    single query based on their IDs. It's an efficient way 
-    to retrieve all artworks associated with the user's panier.
-    ------------- its like jointure--------------
-    */
-    artworks = await Artwork.find({ _id: { $in: artworkIds } });
-  } catch (error) {
-    return next(new HttpError("Failed to retrieve artworks from panier", 500));
-  }
-
-  // If no artworks are found for the provided IDs, return an empty array
-  if (!artworks || artworks.length === 0) {
-    return res.json({ msg: "vide", panier: [] });
-  }
-  res.json({
-    msg: "Artworks retrieved successfully",
-    artworks: artworks,
-  });
 });
+
 
 /**
  * @desc    add artwork to panier of user
