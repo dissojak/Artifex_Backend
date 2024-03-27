@@ -13,7 +13,6 @@ exports.isFollowing = asyncHandler(async (req, res, next) => {
   const clientId = req.user._id;
   const artistId = req.body.artistId;
   try {
-    // Check if the client is following the artist
     const isFollowing = await Follow.findOne({ clientId, artistId });
 
     const followingStatus = !!isFollowing; // Convert to boolean
