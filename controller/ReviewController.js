@@ -16,7 +16,7 @@ const mongoose = require("mongoose");
 
 /**
  * @desc    Get reviews by artwork ID
- * @route   GET /api/review/:artworkId
+ * @route   GET /api/review/artwork/:artworkId
  * @access  Private
  */
 exports.getReviewsByArtworkId = asyncHandler(async (req, res, next) => {
@@ -352,6 +352,20 @@ exports.reportComment = async (req, res, next) => {
 };
 
 // Get reported reviews
-exports.getReportedReviews = async (req, res, next) => {
-  // Implement your logic here
-};
+exports.getReportedReviews = asyncHandler(async (req, res, next) => {
+  try {
+    const reports = await ReportReview.find();
+    if (!reports || reports.length === 0) {
+      return res.json({
+        msg: "vide",
+        reports: [],
+      });
+    }
+    res.json({
+      msg: "reports retrieved successfully",
+      reports,
+    });
+  } catch (err) {
+    return next(new HttpError(`Failed to get reports , ${err}`, 500));
+  }
+});

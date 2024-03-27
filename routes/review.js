@@ -5,7 +5,7 @@ const RC = require("../controller/ReviewController");
 const MW = require("../middleware/authMiddleware");
 
 // Get reviews by artwork ID
-router.get("/:artworkId", MW.protect, RC.getReviewsByArtworkId);
+router.get("/artwork/:artworkId", MW.protect, RC.getReviewsByArtworkId);
 
 // Add or update a comment in a review
 router.patch(
