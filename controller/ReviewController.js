@@ -247,7 +247,8 @@ else then that its not new rating its an update
  */
 
 exports.addRating = async (req, res, next) => {
-  const { artistId, artworkId, newRating } = req.body; // Assuming reviewId and newRating are provided in the request body
+  const { artistId, artworkId, newRating } = req.body; 
+  const clientId = req.user._id;
 
   try {
     const review = await Review.findOne({ clientId, artworkId });
@@ -260,9 +261,9 @@ exports.addRating = async (req, res, next) => {
       review.rating = newRating;
 
       const analytics = await Analytics.findOneAndUpdate(
-        { artistId }, // Assuming artistId is present in the review schema
+        { artistId },  
         { $inc: { ratingAnalytics: newRating } },
-        { new: true } // Return the updated analytics document
+        { new: true }
       );
 
       // Save the changes within a transaction
@@ -279,7 +280,7 @@ exports.addRating = async (req, res, next) => {
 
       // Delete the old rating from analytics
       const analytics = await Analytics.findOneAndUpdate(
-        { artistId: review.artistId },
+        { artistId },
         { $inc: { ratingAnalytics: -oldRating } },
         { new: true }
       );
