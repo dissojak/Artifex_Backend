@@ -17,13 +17,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
   }
 
   const artistId = req.user._id;
-  const {
-    title,
-    description,
-    price,
-    imageArtwork,
-    id_category,
-  } = req.body;
+  const { title, description, price, imageArtwork, id_category } = req.body;
 
   try {
     // Create new artwork instance
@@ -49,31 +43,32 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * @desc    Get artwork by ID
- * @route   GET /api/artwork/getArtwork/:id
+ * @desc    Get artworks from database
+ * @route   GET /api/artwork/getArtworks
  * @access  Private
  */
-exports.getArtwork = asyncHandler(async (req, res, next) => {
-  const artworkId = req.params.id;
-
+exports.getArtworks = asyncHandler(async (req, res, next) => {
   try {
-      // Find the artwork by its ID and populate the category name
-      const artwork = await Artwork.findById(artworkId).populate({
-          path: 'id_category', // Populate the 'id_category' field
-          select: 'name' // Select the 'name' 
-          // select: 'name -_id' // Select only the 'name' field and exclude the '_id' field
+    const artworks = await Artwork.find()
+      .populate({
+        path: "id_category", // Populate the 'id_category' field
+        select: "name", // Select the 'name'
+        // select: 'name -_id' // Select only the 'name' field and exclude the '_id' field
+      })
+      .populate({
+        path: "id_artist",
+        select: "username , profileImage",
       });
 
-      if (!artwork) {
-          return next(new HttpError("Artwork not found", 404));
-      }
+    if (!artworks || artworks.length === 0) {
+      return next(new HttpError("Artworks not found", 404));
+    }
 
-      res.json({
-          msg: "Artwork retrieved successfully",
-          artwork,
-      });
+    res.json({
+      msg: "Artworks retrieved successfully",
+      artworks,
+    });
   } catch (error) {
-      next(new HttpError(error.message || "Failed to retrieve artwork", 500));
+    next(new HttpError(error.message || "Failed to retrieve artwork", 500));
   }
 });
-

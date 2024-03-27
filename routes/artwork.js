@@ -17,6 +17,6 @@ router.post(
     AWC.addArtwork
   );
 
-router.get("/getArtwork/:id",MW.protect,AWC.getArtwork);
+router.get("/getArtworks",MW.protect,AWC.getArtworks);
 
 module.exports = router;
