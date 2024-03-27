@@ -164,7 +164,7 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc    Update user profile
- * @route   PUT /api/user/settings 
+ * @route   PUT /api/user/settings
  * @params  username || email || newPw(new password) && oldPw(old password)
  * @access  Private
  */
@@ -305,8 +305,11 @@ exports.getPanier = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
   try {
-    const user = await User.findById(userId).populate('panier');
-    
+    const user = await User.findById(userId).populate({
+      path: "panier",
+      populate: { path: "id_artist" }, // Populate the 'artist' field in each artwork
+    });
+
     if (!user) {
       return next(new HttpError("User not found", 404));
     }
@@ -324,7 +327,6 @@ exports.getPanier = asyncHandler(async (req, res, next) => {
     return next(new HttpError("Failed to retrieve user panier", 500));
   }
 });
-
 
 /**
  * @desc    add artwork to panier of user
