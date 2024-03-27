@@ -7,7 +7,7 @@ const MW = require("../middleware/authMiddleware");
 // Get reviews by artwork ID
 router.get("/:artworkId", MW.protect, RC.getReviewsByArtworkId);
 
-// Add a comment to a review
+// Add or update a comment in a review
 router.patch(
   "/addComment",
   [check("comment").isLength({ min: 2, max: 50 })],
@@ -21,8 +21,8 @@ router.patch("/updateView", MW.protect, RC.updateView);
 // Delete a comment from a review by the Client
 router.delete("/deleteComment", MW.protect, RC.deleteComment);
 
-// Add rating to a review
-router.patch("/addRating/:reviewId", RC.addRating);
+// Add or update rating in a review
+router.patch("/addRating", RC.addRating);
 
 // Delete a review
 router.delete("/deleteReview/:reviewId", RC.deleteReview);
