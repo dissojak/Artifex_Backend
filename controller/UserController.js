@@ -300,6 +300,14 @@ exports.update_ProfileImage = async (req, res) => {
  * @desc    Get panier of user
  * @route   GET /api/user/getPanier
  * @access  Private
+ * @returns {
+ *            msg: "...",
+ *            artworks:[
+ *                      {artwork:{artist}},
+ *                      {artwork:{artist}},
+ *                      ...
+ *                      ]
+ *          }
  */
 exports.getPanier = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
