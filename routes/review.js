@@ -27,4 +27,7 @@ router.post("/report", MW.protect, RC.reportComment);
 // Get reported reviews
 router.get("/reported", MW.protect, RC.getReportedReviews);
 
+// Get reported reviews by class
+router.get("/getReviewByClass", MW.protect, RC.getReportedReviewsByClass);
+
 module.exports = router;
