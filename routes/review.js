@@ -18,8 +18,8 @@ router.patch(
 // Update view count in a review
 router.patch("/updateView", MW.protect, RC.updateView);
 
-// Delete a comment from a review
-router.delete("/deleteComment/:reviewId/:commentId", RC.deleteComment);
+// Delete a comment from a review by the Client
+router.delete("/deleteComment", MW.protect, RC.deleteComment);
 
 // Add rating to a review
 router.patch("/addRating/:reviewId", RC.addRating);

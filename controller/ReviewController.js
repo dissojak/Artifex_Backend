@@ -178,10 +178,46 @@ exports.updateView = async (req, res, next) => {
   }
 };
 
-// Delete a comment from a review
+/**
+ * @desc     Delete a comment from a review
+ * @function Delete
+ * @method   DELETE
+ * @route    DELETE /api/review/deleteComment
+ * @params   artistId, artworkId
+ * @access   Private
+ * @author   Client
+ */
 exports.deleteComment = async (req, res, next) => {
-  // Implement your logic here
-  //   update the analytics
+  const { artistId, artworkId } = req.body;
+  const clientId = req.user._id;
+
+  try {
+    const review = await Review.findOne({ clientId, artworkId });
+    if (!review) {
+      return next(new HttpError('Review not found', 404));
+    }
+    review.comment = ''; // Remove the comment
+
+    // Update the analytics (for example, decrement the number of comments)
+    const analytics = await Analytics.findOneAndUpdate(
+      { artistId },
+      { $inc: { numberOfComments: -1 } },
+      { new: true } // Return the updated analytics document
+    );
+
+    // Save the changes within a transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    await review.save({ session });
+    await analytics.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: 'Comment deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    return next(new HttpError('Failed to delete comment', 500));
+  }
 };
 
 // Add rating to a review
