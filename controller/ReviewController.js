@@ -144,7 +144,7 @@ exports.updateView = async (req, res, next) => {
       analytics.totaleReviews += 1;
       analytics.viewsAnalytics += 1;
     } else {
-    /*but look this is just for security reasons , otherwise 
+      /*but look this is just for security reasons , otherwise 
     the this else will never excute , cuz the review will never
     be created by putting a rating or a comment , cuz before 
     you ever can do those u need to enter to artwork , and whenever
@@ -170,11 +170,9 @@ exports.updateView = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
-    res
-      .status(201)
-      .json({
-        message: "Clinet viewed this artwork ! Saving data done successfully",
-      });
+    res.status(201).json({
+      message: "Clinet viewed this artwork ! Saving data done successfully",
+    });
   } catch (err) {
     console.error(err);
     return next(new HttpError("Failed to save data", 500));
@@ -245,7 +243,7 @@ else then that its not new rating its an update
  */
 
 exports.addRating = async (req, res, next) => {
-  const { artistId, artworkId, newRating } = req.body; 
+  const { artistId, artworkId, newRating } = req.body;
   const clientId = req.user._id;
 
   try {
@@ -259,7 +257,7 @@ exports.addRating = async (req, res, next) => {
       review.rating = newRating;
 
       const analytics = await Analytics.findOneAndUpdate(
-        { artistId },  
+        { artistId },
         { $inc: { ratingAnalytics: newRating } },
         { new: true }
       );
@@ -305,8 +303,37 @@ exports.addRating = async (req, res, next) => {
 };
 
 // Report a review
-exports.reportReview = async (req, res, next) => {
-  // Implement your logic here
+exports.reportComment = async (req, res, next) => {
+  const { reportClass, reportedClientId, artworkId } = req.body;
+  const reportingClientId = req.user._id; // Assuming the user ID is available in the request object
+
+  try {
+    const review = await Review.findOne({
+      clientId: reportedClientId,
+      artworkId,
+    });
+
+    if (!review) {
+      return next(new HttpError("Review not found", 404));
+    }
+
+    // Create a new report
+    const report = new ReportReview({
+      reportClass,
+      reportedClientId,
+      artworkId,
+      reportingClientId,
+    });
+
+    // Save the report to the database
+    await report.save();
+
+    res.status(201).json({ message: "Review reported successfully" });
+  } catch (error) {
+    // Handle any errors that occur during the process
+    console.error("Error reporting review:", error);
+    return next(new HttpError("Failed to report review", 500));
+  }
 };
 
 // Get reported reviews
