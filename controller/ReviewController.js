@@ -302,14 +302,20 @@ exports.addRating = async (req, res, next) => {
   }
 };
 
-// Report a review
+/**
+ * @desc     Report a comment in review
+ * @method   post
+ * @route    POST /api/review/report
+ * @params   reportClass, reportedClientId, artworkId
+ * @access   Private
+ */
 exports.reportComment = async (req, res, next) => {
-  const { reportClass, reportedClientId, artworkId } = req.body;
+  const { reportClass, clientId, artworkId } = req.body;
   const reportingClientId = req.user._id; // Assuming the user ID is available in the request object
 
   try {
     const review = await Review.findOne({
-      clientId: reportedClientId,
+      clientId,
       artworkId,
     });
 
@@ -317,22 +323,31 @@ exports.reportComment = async (req, res, next) => {
       return next(new HttpError("Review not found", 404));
     }
 
-    // Create a new report
-    const report = new ReportReview({
+    const existingReport = await ReportReview.findOne({
       reportClass,
-      reportedClientId,
-      artworkId,
-      reportingClientId,
+      clientId: reportingClientId,
+      ReviewId: review._id,
     });
 
-    // Save the report to the database
-    await report.save();
+    if (existingReport) {
+      res
+        .status(201)
+        .json({ message: "Your repport is already saved on our servers." });
+    } else {
+      // Create a new report
+      const report = new ReportReview({
+        reportClass,
+        clientId: reportingClientId, //here clientId is the person who reported
+        ReviewId: review._id,
+      });
 
-    res.status(201).json({ message: "Review reported successfully" });
-  } catch (error) {
-    // Handle any errors that occur during the process
-    console.error("Error reporting review:", error);
-    return next(new HttpError("Failed to report review", 500));
+      // Save the report to the database
+      await report.save();
+
+      res.status(201).json({ message: "Review reported successfully" });
+    }
+  } catch (err) {
+    return next(new HttpError(`Failed to report this comment , ${err}`, 500));
   }
 };
 
