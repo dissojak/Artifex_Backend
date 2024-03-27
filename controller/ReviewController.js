@@ -223,8 +223,6 @@ exports.deleteComment = async (req, res, next) => {
   }
 };
 
-// Add rating to a review
-
 /** 
  * -------- @Logic ----------------------
  * Implement your logic here
@@ -241,7 +239,7 @@ else then that its not new rating its an update
  * @desc     Add rating to a review
  * @function add or update
  * @method   PATCH
- * @route    DELETE /api/review/addRating
+ * @route    PATCH /api/review/addRating
  * @params   artistId, artworkId, newRating
  * @access   Private
  */
@@ -304,12 +302,6 @@ exports.addRating = async (req, res, next) => {
     console.error(err);
     return next(new HttpError("Failed to add or update rating", 500));
   }
-};
-
-// Delete a review
-exports.deleteReview = async (req, res, next) => {
-  // Implement your logic here
-  // when you delete review , update the analytics
 };
 
 // Report a review

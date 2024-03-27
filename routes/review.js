@@ -24,9 +24,6 @@ router.delete("/deleteComment", MW.protect, RC.deleteComment);
 // Add or update rating in a review
 router.patch("/addRating", MW.protect,RC.addRating);
 
-// Delete a review
-router.delete("/deleteReview/:reviewId", RC.deleteReview);
-
 // Report a review
 router.post("/report/:reviewId", RC.reportReview);
 
