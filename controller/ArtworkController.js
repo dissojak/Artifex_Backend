@@ -8,6 +8,7 @@ const Artwork = require("../models/artwork");
  * @route   POST /api/artwork/addArtwork
  * @params  title,description,price,imageArtwork,id_category
  * @access  Private
+ * @optionel_Params exclusive ( only when its true);
  */
 exports.addArtwork = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);

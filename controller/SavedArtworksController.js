@@ -12,7 +12,13 @@ exports.getSavedArtworks = asyncHandler(async (req, res, next) => {
   const clientId = req.user._id;
   let savedArtworks;
   try {
-    savedArtworks = await SavedArtworks.find({ clientId });
+    savedArtworks = await SavedArtworks.find({ clientId }).populate({
+      path: "artworkId",
+      populate: [
+        { path: "id_category", select: "name" },
+        { path: "id_artist", select: "username profileImage" },
+      ],
+    });
   } catch (err) {
     return next(new HttpError(" Failed to retrieve saved artworks ! ", 500));
   }
@@ -92,5 +98,3 @@ exports.unsaveArtwork = asyncHandler(async (req, res, next) => {
     next(new HttpError("Failed to unsave the artwork", 500));
   }
 });
-
-

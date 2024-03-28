@@ -14,7 +14,14 @@ exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
   const clientId = req.user._id;
   let likedArtworks;
   try {
-    likedArtworks = await LikedArtworks.find({ clientId });
+    likedArtworks = await LikedArtworks.find({ clientId })
+    .populate({
+      path: "artworkId",
+      populate: [
+        { path: "id_category", select: "name" },
+        { path: "id_artist", select: "username profileImage" }
+      ]
+    });
   } catch (err) {
     return next(new HttpError(" Failed to retrieve liked artworks ! ", 500));
   }
@@ -29,7 +36,7 @@ exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc     like an artwork
- * @function Add 
+ * @function Add
  * @method   post
  * @route    POST api/liked/saved/likeArtwork
  * @params   artistId, artworkId
@@ -55,7 +62,7 @@ exports.likeArtwork = asyncHandler(async (req, res, next) => {
       analytics = new Analytics({ artistId });
     }
 
-    analytics.likesAnalytics+=1;
+    analytics.likesAnalytics += 1;
 
     // Add artworkId to savedArtworks
     const likedArtwork = new LikedArtworks({
@@ -117,15 +124,13 @@ exports.unlikeArtwork = asyncHandler(async (req, res, next) => {
 
     if (analytics.likesAnalytics > 0) {
       analytics.likesAnalytics -= 1;
-    }else{
+    } else {
       throw new HttpError("there is problem with the analytics", 401);
     }
 
     await analytics.save();
 
-    res
-      .status(200)
-      .json({ message: "Artwork has been unliked successfully" });
+    res.status(200).json({ message: "Artwork has been unliked successfully" });
   } catch (error) {
     next(new HttpError("Failed to unlike this artwork ", 500));
   }
