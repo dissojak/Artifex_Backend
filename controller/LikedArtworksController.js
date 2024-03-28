@@ -29,9 +29,9 @@ exports.getLikedArtworks = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc     like an artwork
- * @function Update
- * @method   PATCH
- * @route    PATCH api/liked/saved/likeArtwork
+ * @function Add 
+ * @method   post
+ * @route    POST api/liked/saved/likeArtwork
  * @params   artistId, artworkId
  * @access   Private
  */
