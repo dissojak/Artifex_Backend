@@ -17,7 +17,8 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
   }
 
   const artistId = req.user._id;
-  const { title, description, price, imageArtwork, id_category,exclusive } = req.body;
+  const { title, description, price, imageArtwork, id_category, exclusive } =
+    req.body;
 
   try {
     // Create new artwork instance
@@ -28,7 +29,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
       imageArtwork,
       id_category,
       id_artist: artistId,
-      exclusive:exclusive || false,
+      exclusive: exclusive || false,
     });
 
     // Save artwork to database
@@ -169,5 +170,52 @@ exports.deleteArtwork = asyncHandler(async (req, res, next) => {
     });
   } catch (error) {
     next(new HttpError(error.message || "Failed to delete artwork", 500));
+  }
+});
+
+/**
+ * @desc    Edit an existing artwork
+ * @route   PUT /api/artwork/editArtwork/:artworkId
+ * @params  title, description, price, imageArtwork, id_category
+ * @access  Private
+ */
+exports.editArtwork = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError("Invalid data", 400));
+  }
+
+  const artistId = req.user._id;
+  const artworkId = req.params.artworkId;
+  const { title, description, price, imageArtwork, id_category} =
+    req.body;
+
+  try {
+    let artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      return next(new HttpError("Artwork not found", 404));
+    }
+
+    // Check if the user is authorized to edit the artwork
+    if (String(artwork.id_artist) !== String(artistId)) {
+      return next(
+        new HttpError("You are not authorized to edit this artwork", 403)
+      );
+    }
+
+    artwork.title = title || artwork.title;
+    artwork.description = description || artwork.description;
+    artwork.price = price || artwork.price;
+    artwork.imageArtwork = imageArtwork || artwork.imageArtwork;
+    artwork.id_category = id_category || artwork.id_category;
+
+    artwork = await artwork.save();
+
+    res.json({
+      msg: "Artwork updated successfully",
+      artwork,
+    });
+  } catch (error) {
+    next(new HttpError(error.message || "Failed to update artwork", 500));
   }
 });
