@@ -19,7 +19,7 @@ router.post(
 
 router.get("/getArtworks",MW.protect,AWC.getArtworks);
 router.get("/getExclusiveArtworks",MW.protect,AWC.getExclusiveArtworks);
-router.delete("/superDeleteArtwork/:artworkId",MW.protect,AWC.SuperdeleteArtwork);
+router.delete("/deleteArtworkByAdmin/:artworkId",MW.protect,AWC.deleteArtworkByAdmin);
 router.delete("/deleteArtwork/:artworkId",MW.protect,AWC.deleteArtwork);
 
 

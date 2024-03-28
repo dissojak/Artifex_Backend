@@ -2,7 +2,6 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Artwork = require("../models/artwork");
-const { getCategoryNameById } = require("../controller/CategoryController");
 
 /**
  * @desc    Add new artwork
@@ -17,7 +16,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
   }
 
   const artistId = req.user._id;
-  const { title, description, price, imageArtwork, id_category } = req.body;
+  const { title, description, price, imageArtwork, id_category,exclusive } = req.body;
 
   try {
     // Create new artwork instance
@@ -28,6 +27,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
       imageArtwork,
       id_category,
       id_artist: artistId,
+      exclusive:exclusive || false,
     });
 
     // Save artwork to database
@@ -111,12 +111,12 @@ exports.getExclusiveArtworks = asyncHandler(async (req, res, next) => {
 
 /**
  * @desc    Delete an artwork
- * @route   DELETE /api/artwork/superDeleteArtwork/:artworkId
+ * @route   DELETE /api/artwork/deleteArtworkByAdmin/:artworkId
  * @params  artworkId
  * @access  Private
  * @author  Admin
  */
-exports.SuperdeleteArtwork = asyncHandler(async (req, res, next) => {
+exports.deleteArtworkByAdmin = asyncHandler(async (req, res, next) => {
   const artworkId = req.params.artworkId;
 
   try {
