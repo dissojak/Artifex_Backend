@@ -9,5 +9,5 @@ router.get("/getArtworksReportsByClass", MW.protect, RPC.getReportedArtworksByCl
 router.get("/review/reports", MW.protect, RPC.getReportedReviews);
 router.get("/artwork/reports", MW.protect, RPC.getReportedArtworks);
 router.post("/reportComment", MW.protect, RPC.reportComment);
-
+router.post("/reportArtwork", MW.protect, RPC.reportArtwork);
 module.exports = router;

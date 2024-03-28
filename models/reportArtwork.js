@@ -17,14 +17,8 @@ const reportArtworkSchema = new mongoose.Schema({
     ],
     required: true,
   },
-  // ID of the client whos got reported
-  reportedClientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Assuming 'User' is the name of the User model
-    required: true,
-  },
-  // ID of the client who reported
-  reportingClientId: {
+  // ID of the client who reporte
+  clientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User", // Assuming 'User' is the name of the User model
     required: true,
