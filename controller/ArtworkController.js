@@ -49,7 +49,11 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
  */
 exports.getArtworks = asyncHandler(async (req, res, next) => {
   try {
-    const artworks = await Artwork.find({type:'public',exclusive:false})
+    const artworks = await Artwork.find({
+      type: "public",
+      exclusive: false,
+      isDeletedByUser: false,
+    })
       .populate({
         path: "id_category", // Populate the 'id_category' field
         select: "name", // Select the 'name'
@@ -70,5 +74,99 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
     });
   } catch (error) {
     next(new HttpError(error.message || "Failed to retrieve artwork", 500));
+  }
+});
+
+/**
+ * @desc    Get Exclusive Artworks from database
+ * @route   GET /api/artwork/getExclusiveArtworks
+ * @access  Private
+ * @author  Admin
+ */
+exports.getExclusiveArtworks = asyncHandler(async (req, res, next) => {
+  try {
+    const artworks = await Artwork.find({ exclusive: true })
+      .populate({
+        path: "id_category", // Populate the 'id_category' field
+        select: "name", // Select the 'name'
+        // select: 'name -_id' // Select only the 'name' field and exclude the '_id' field
+      })
+      .populate({
+        path: "id_artist",
+        select: "username , profileImage",
+      });
+
+    if (!artworks || artworks.length === 0) {
+      return next(new HttpError("Artworks not found", 404));
+    }
+
+    res.json({
+      msg: "Artworks retrieved successfully",
+      artworks,
+    });
+  } catch (error) {
+    next(new HttpError(error.message || "Failed to retrieve artwork", 500));
+  }
+});
+
+/**
+ * @desc    Delete an artwork
+ * @route   DELETE /api/artwork/superDeleteArtwork/:artworkId
+ * @params  artworkId
+ * @access  Private
+ * @author  Admin
+ */
+exports.SuperdeleteArtwork = asyncHandler(async (req, res, next) => {
+  const artworkId = req.params.artworkId;
+
+  try {
+    const artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      return next(new HttpError("Artwork not found", 404));
+    }
+
+    await artwork.deleteOne();
+
+    res.json({ msg: "Artwork deleted successfully" });
+  } catch (error) {
+    next(new HttpError(`${error.message},Failed to delete artwork`, 500));
+  }
+});
+
+/**
+ * @desc    Delete an artwork
+ * @route   DELETE /api/artwork/deleteArtwork/:artworkId
+ * @params  artworkId
+ * @access  Private
+ */
+exports.deleteArtwork = asyncHandler(async (req, res, next) => {
+  const artworkId = req.params.artworkId;
+
+  try {
+    let artwork = await Artwork.findById(artworkId);
+
+    if (!artwork) {
+      return next(new HttpError("Artwork not found", 404));
+    }
+
+    // Check if the user is authorized to delete the artwork
+    if (String(artwork.id_artist) !== String(req.user._id)) {
+      return next(
+        new HttpError("You are not authorized to delete this artwork", 403)
+      );
+    }
+    // Find the artwork by its ID and update the deletion status
+    artwork = await Artwork.findByIdAndUpdate(
+      artworkId,
+      { isDeletedByOwner: true },
+      { new: true }
+    );
+
+    res.status(200).json({
+      msg: "Artwork deleted successfully",
+      artwork,
+    });
+  } catch (error) {
+    next(new HttpError(error.message || "Failed to delete artwork", 500));
   }
 });

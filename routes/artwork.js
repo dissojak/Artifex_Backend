@@ -7,7 +7,7 @@ const router = express.Router();
 router.post(
     "/AddArtwork",
     [
-      check("title").isLength({ min: 2 }).withMessage("Title must be at least 2 characters long"),
+      check("title").isLength({ min: 2 ,max:15}).withMessage("Title must be at least 2 characters long"),
       check("description").isLength({ min: 10, max: 100 }).withMessage("Description must be between 10 and 100 characters long"),
       check("price").isNumeric().withMessage("Price must be a number"),
       check("imageArtwork").isURL().withMessage("ImageArtwork must be a valid URL"),
@@ -18,5 +18,10 @@ router.post(
   );
 
 router.get("/getArtworks",MW.protect,AWC.getArtworks);
+router.get("/getExclusiveArtworks",MW.protect,AWC.getExclusiveArtworks);
+router.delete("/superDeleteArtwork/:artworkId",MW.protect,AWC.SuperdeleteArtwork);
+router.delete("/deleteArtwork/:artworkId",MW.protect,AWC.deleteArtwork);
+
+
 
 module.exports = router;
