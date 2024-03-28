@@ -310,8 +310,8 @@ exports.addRating = async (req, res, next) => {
  */
 exports.reportComment = async (req, res, next) => {
   const { reportClass, clientId, artworkId } = req.body;
-  const reportingClientId = req.user._id; // Assuming the user ID is available in the request object
-
+  const reportingClientId = req.user._id;
+  
   try {
     const review = await Review.findOne({
       clientId,
@@ -349,53 +349,3 @@ exports.reportComment = async (req, res, next) => {
     return next(new HttpError(`Failed to report this comment , ${err}`, 500));
   }
 };
-
-/**
- * @desc     Get reported reviews
- * @method   get
- * @route    GET /api/review/reported
- * @access   Private
- */
-exports.getReportedReviews = asyncHandler(async (req, res, next) => {
-  try {
-    const reports = await ReportReview.find();
-    if (!reports || reports.length === 0) {
-      return res.json({
-        msg: "vide",
-        reports: [],
-      });
-    }
-    res.json({
-      msg: "reports retrieved successfully",
-      reports,
-    });
-  } catch (err) {
-    return next(new HttpError(`Failed to get reports , ${err}`, 500));
-  }
-});
-
-/**
- * @desc     Get reported reviews by class of report
- * @method   get
- * @route    GET /api/review/getReviewByClass
- * @params   class
- * @access   Private
- */
-exports.getReportedReviewsByClass = asyncHandler(async (req, res, next) => {
-const reportClass=req.body.class;
-try {
-  const reports = await ReportReview.find({reportClass});
-  if (!reports || reports.length === 0) {
-    return res.json({
-      msg: "vide",
-      reports: [],
-    });
-  }
-  res.json({
-    msg: `reports of class:'${reportClass}' retrieved successfully`,
-    reports,
-  });
-} catch (err) {
-  return next(new HttpError(`Failed to get reports , ${err}`, 500));
-}
-});
