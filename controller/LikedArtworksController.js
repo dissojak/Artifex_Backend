@@ -77,3 +77,56 @@ exports.likeArtwork = asyncHandler(async (req, res, next) => {
     next(new HttpError("Failed to like this artwork ", 500));
   }
 });
+
+/**
+ * @desc     Unlike an artwork
+ * @function Update
+ * @method   delete
+ * @route    DELETE /api/liked/saved/unlikeArtwork
+ * @params   artworkId, artistId
+ * @access   Private
+ */
+
+exports.unlikeArtwork = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const { artworkId, artistId } = req.body;
+
+  let analytics;
+
+  try {
+    // Check if artworkId is valid
+    const artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      throw new HttpError("Artwork not found", 404);
+    }
+
+    // Find the liked artwork record
+    const likedArtwork = await LikedArtworks.findOneAndDelete({
+      artworkId,
+      clientId: userId,
+    });
+
+    if (!likedArtwork) {
+      return res.status(200).json({ message: "Artwork is already unliked" });
+    }
+
+    analytics = await Analytics.findOne({ artistId });
+    if (!analytics) {
+      analytics = new Analytics({ artistId });
+    }
+
+    if (analytics.likesAnalytics > 0) {
+      analytics.likesAnalytics -= 1;
+    }else{
+      throw new HttpError("there is problem with the analytics", 401);
+    }
+
+    await analytics.save();
+
+    res
+      .status(200)
+      .json({ message: "Artwork has been unliked successfully" });
+  } catch (error) {
+    next(new HttpError("Failed to unlike this artwork ", 500));
+  }
+});
