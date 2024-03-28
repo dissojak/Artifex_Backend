@@ -2,7 +2,6 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Review = require("../models/review");
-const Artwork = require("../models/artwork");
 const Analytics = require("../models/analytics");
 const ReportReview = require("../models/reportReview");
 const mongoose = require("mongoose");
