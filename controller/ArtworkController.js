@@ -49,7 +49,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
  */
 exports.getArtworks = asyncHandler(async (req, res, next) => {
   try {
-    const artworks = await Artwork.find({type:'public'})
+    const artworks = await Artwork.find({type:'public',exclusive:false})
       .populate({
         path: "id_category", // Populate the 'id_category' field
         select: "name", // Select the 'name'
