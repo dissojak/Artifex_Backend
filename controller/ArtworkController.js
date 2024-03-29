@@ -239,4 +239,21 @@ exports.getArtworksByArtistId = asyncHandler(async (req, res, next) => {
   }
 });
 
-exports.getArtworksByCategory
+exports.getArtworksByCategory = asyncHandler(async (req, res, next) => {
+  const categoryId = req.body.categoryId;
+
+  try {
+    const artworks = await Artwork.find({ id_category: categoryId });
+
+    if (!artworks || artworks.length === 0) {
+      return res.status(404).json({ message: "No artworks found for this category" });
+    }
+
+    res.status(200).json({
+      message: "Artworks retrieved successfully",
+      artworks,
+    });
+  } catch (error) {
+    next(new HttpError("Failed to retrieve artworks", 500));
+  }
+});
