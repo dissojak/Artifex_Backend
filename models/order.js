@@ -9,6 +9,11 @@ const orderSchema = new mongoose.Schema({
     required: true, // Order ID is required
     unique: true // Order ID must be unique
   },
+  orderRef: {
+    type: String,
+    required: true, // Order code is required
+    unique: true // Order code must be unique
+  },
   // Date of the order
   date: {
     type: Date,
@@ -36,6 +41,7 @@ const orderSchema = new mongoose.Schema({
   // Status of the order
   status: {
     type: String,
+    enum: ['pending','completed','rejected'],
     default: 'pending' // Default status is 'pending'
   },
   // Delivery date
