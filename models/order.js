@@ -18,7 +18,8 @@ const orderSchema = new mongoose.Schema({
   serviceType: {
     type: String,
     enum: ['normal', 'rapid'], // Service type can only be 'normal' or 'rapid'
-    default: 'normal' // Default service type is 'normal'
+    default: 'normal', // Default service type is 'normal'
+    required: true // serviceType is required
   },
   // Client ID referencing the User model
   clientId: {
