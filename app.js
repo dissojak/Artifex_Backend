@@ -6,6 +6,8 @@ const cors = require('cors');
 
 const cookieParser = require('cookie-parser');
 const HttpError = require("./models/http-error");
+const http = require('http');
+const socketIo = require('socket.io');
 
 const user = require("./routes/user");
 const artist = require("./routes/artist");
@@ -24,6 +26,8 @@ const likedSaved = require("./routes/savedLikedArtworks");
 
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
 app.use(cors());
 
@@ -42,6 +46,14 @@ app.use((req, res, next) => {
   );
   // res.setHeader("Content-Type", "multipart/form-data");
   next();
+});
+
+io.on('connection', (socket) => {
+  console.log('Client connected');
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
 });
 
 app.use("/api/user", user);

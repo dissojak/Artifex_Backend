@@ -1,7 +1,9 @@
 const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
-const asyncHandler = require("../middleware/async");
+const asyncHandler = require("express-async-handler");
 const Order = require("../models/order");
+const OrderNotification = require("../models/orderNotification");
+const mongoose = require("mongoose");
 
 // @desc    Get orders for a specific client
 // @route   GET /api/order/client
@@ -19,7 +21,10 @@ exports.getClientOrders = asyncHandler(async (req, res, next) => {
         .json({ message: "No orders found for this client" });
     }
 
-    res.status(200).json({ message: "Orders retrieved successfully", orders });
+    res.status(200).json({
+      message: "Orders retrieved successfully",
+      orders,
+    });
   } catch (err) {
     return next(
       new HttpError("Failed to retrieve orders for this client", 500)
@@ -43,7 +48,10 @@ exports.getArtistOrders = asyncHandler(async (req, res, next) => {
         .json({ message: "No orders found for this artist" });
     }
 
-    res.status(200).json({ message: "Orders retrieved successfully", orders });
+    res.status(200).json({
+      message: "Orders retrieved successfully",
+      orders,
+    });
   } catch (error) {
     return next(
       new HttpError("Failed to retrieve orders for this artist", 500)
@@ -51,62 +59,78 @@ exports.getArtistOrders = asyncHandler(async (req, res, next) => {
   }
 });
 
-// @desc    Get a specific order placed by a client
-// @route   GET /api/order/clientOrder
+const generateOrderId = async () => {
+  let orderId;
+  do {
+    orderId = Math.floor(10000 + Math.random() * 90000).toString();
+  } while (await Order.exists({ orderId }));
+
+  return orderId;
+};
+
+// @desc    make a new order by client to an artist
+// @route   POST /api/order/newOrder
 // @access  Private
-
-exports.getOrderOfClinet = asyncHandler(async (req, res, next) => {
-  const artistId = req.user._id;
-  const clientId = req.body.clientId;
-
-  try {
-    const order = await Order.findOne({ artistId, clientId }).populate(
-      "clientId",
-      "username",
-      "profileImage"
-    );
-
-    if (!order) {
-      return res
-        .status(404)
-        .json({ message: "Order not found for this client" });
-    }
-
-    res.status(200).json({ message: "Order retrieved successfully", order });
-  } catch (error) {
-    return next(new HttpError("Failed to retrieve order for this client", 500));
+exports.makeOrder = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError("Invalid Inputs, check your data", 422));
   }
-});
-
-// @desc    Get a specific order placed by a client
-// @route   GET /api/order/clientOrder
-// @access  Private
-exports.getOrderSubmitedByArtist = asyncHandler(async (req, res, next) => {
+  const { artistId, description, serviceType } = req.body;
   const clientId = req.user._id;
-  const artistId = req.body.artistId;
+
+  const orderId = await generateOrderId();
+
+  const order = new Order({
+    orderId,
+    date: new Date(),
+    serviceType,
+    clientId,
+    artistId,
+    description,
+  });
+  console.log(order);
+
+  const notification = new OrderNotification({
+    recipientId: artistId,
+    senderId: clientId,
+    action: "create",
+    orderId: order._id,
+  });
+  console.log(notification);
 
   try {
-    const order = await Order.findOne({ artistId, clientId }).populate(
-      "artistId",
-      "username",
-      "profileImage"
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    await order.save({ session });
+    await notification.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+  } catch (e) {
+    return next(
+      new HttpError("Couldn't add the new order and save notification", 500)
     );
-
-    if (!order) {
-      return res
-        .status(404)
-        .json({ message: "Order not found for this client" });
-    }
-
-    res.status(200).json({ message: "Order retrieved successfully", order });
-  } catch (error) {
-    return next(new HttpError("Failed to retrieve order for this client", 500));
   }
+
+  const orderDetails = await Order.findOne({ orderId:order._id }).populate(
+    "clientId"
+  );
+  if (!orderDetails) {
+    return next(new HttpError("Couldn't find order", 422));
+  }
+
+  try {
+    io.to(artistId).emit("newOrder", { orderDetails });
+    console.log("Real-time notification sent to artist");
+  } catch (err) {
+    return next(new HttpError("Couldn't send the real-time notification", 500));
+  }
+
+  res.status(201).json({
+    message: "Order created successfully",
+    order,
+  });
 });
-
-exports.makeOrder;
-
-exports.openOrder;
 
 exports.acceptOrder;
 
