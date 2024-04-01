@@ -45,7 +45,11 @@ const orderSchema = new mongoose.Schema({
   // Image of the delivery
   image_liv: {
     type: String // URL or filename of the image
-  }
+  },
+  // description of the order
+  description: {
+    type: String,
+  },
 });
 
 orderSchema.plugin(uniqueValidator);
