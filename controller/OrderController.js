@@ -131,6 +131,7 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   //   return next(new HttpError("Couldn't send the real-time notification", 500));
   // }
 
+  // send a real time notification to the artist about order
   io.to(artistId).emit("newOrder", { orderNotificationDetails });
   console.log("Real-time notification sent to artist");
 
@@ -140,8 +141,78 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.acceptOrder;
+exports.acceptOrder = asyncHandler(async (req, res, next) => {
+  const orderId = req.body.orderId;
 
-exports.declineOrder;
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId },
+      { status: "accepted" },
+      { new: true }
+    );
 
-exports.submitOrder;
+    if (!order) {
+      return next(new HttpError("Order not found", 404));
+    }
+
+    // send a real time notification to the client , accepting info
+    io.to(order.clientId).emit("orderAccept", { orderId: order._id });
+
+    res.status(200).json({ message: "Order accepted successfully", order });
+  } catch (error) {
+    return next(new HttpError("Failed to accept the order", 500));
+  }
+});
+
+exports.declineOrder = asyncHandler(async (req, res, next) => {
+  const orderId = req.body.orderId;
+
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId },
+      { status: "decline" },
+      { new: true }
+    );
+
+    if (!order) {
+      return next(new HttpError("Order not found", 404));
+    }
+
+    // send a real time notification to the client , accepting info
+    io.to(order.clientId).emit("orderDecline", { orderId: order._id });
+
+    res.status(200).json({ message: "Order declined  successfully", order });
+  } catch (error) {
+    return next(new HttpError("Failed to decline the order", 500));
+  }
+});
+
+exports.submitOrder = asyncHandler(async (req, res, next) => {
+  const { date_liv, image_liv, orderId } = req.body;
+
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return next(new HttpError("Order not found", 404));
+    }
+
+    order.date_liv = date_liv;
+    order.image_liv = image_liv;
+    order.status = "completed";
+
+    try {
+      await order.save();
+    } catch (e) {
+      return next(
+        new HttpError("Couldn't subimt the order", 500)
+      );
+    }
+
+    // Send a real-time notification to the client
+    io.to(order.clientId).emit("orderSubmit", { orderId: order._id });
+
+    res.status(200).json({ message: "Order submitted successfully", order });
+  } catch (error) {
+    return next(new HttpError("Failed to submit the order", 500));
+  }
+});
