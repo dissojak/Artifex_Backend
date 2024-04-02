@@ -2,6 +2,7 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Plan = require("../models/plan");
+const User = require("../models/user");
 
 /**
  * @desc    subscribe to plan
@@ -57,22 +58,27 @@ exports.subscribe = asyncHandler(async (req, res, next) => {
  * @author  Admin
  */
 exports.getPlans = asyncHandler(async (req, res, next) => {
-  try {
-    const plans = await Plan.find();
+  const adminId = req.user._id;
 
-    if (!plans || plans.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No plans found for this artist" });
-    }
-
-    res.status(200).json({
-      message: "Plans retrieved successfully",
-      plans,
-    });
-  } catch (error) {
-    return next(new HttpError("Failed to retrieve plans for this artist", 500));
+  const admin = await User.findById(adminId);
+  if (!admin) {
+    return next(new HttpError("User not found", 404));
   }
+
+  if (admin.userType != "admin") {
+    return next(new HttpError("you are not an admin", 400));
+  }
+
+  const plans = await Plan.find();
+
+  if (!plans || plans.length === 0) {
+    return res.status(404).json({ message: "No plans found for this artist" });
+  }
+
+  res.status(200).json({
+    message: "Plans retrieved successfully",
+    plans,
+  });
 });
 
 /**
