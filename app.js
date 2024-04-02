@@ -64,7 +64,7 @@ app.use("/api/plan", plan);
 app.use("/api/order", order);
 app.use("/api/follow", follow);
 app.use("/api/category", category);
-app.use("/api/analysis", analytics);
+app.use("/api/analytics", analytics);
 app.use("/api/report", report);
 app.use("/api/liked/saved", likedSaved);
 
