@@ -146,9 +146,9 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.acceptOrder = asyncHandler(async (req, res, next) => {
   const orderId = req.body.orderId;
-  try {
+  
     const order = await Order.findOneAndUpdate(
-      { _id: orderId },
+      { orderId },
       { status: "accepted" },
       { new: true }
     );
@@ -170,9 +170,6 @@ exports.acceptOrder = asyncHandler(async (req, res, next) => {
     io.to(order.clientId).emit("orderAccept", { orderId: order._id });
 
     res.status(200).json({ message: "Order accepted successfully", order });
-  } catch (error) {
-    return next(new HttpError("Failed to accept the order", 500));
-  }
 });
 
 // @desc    reject order of a client
