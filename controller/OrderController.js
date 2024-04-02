@@ -70,7 +70,7 @@ const generateOrderId = async () => {
 };
 
 // @desc    make a new order by client to an artist
-// @route   POST /api/order/newOrder
+// @route   POST /api/order/new
 // @access  Private
 exports.makeOrder = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
@@ -141,6 +141,9 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    accept order of a client
+// @route   PUT /api/order/accept
+// @access  Private
 exports.acceptOrder = asyncHandler(async (req, res, next) => {
   const orderId = req.body.orderId;
 
@@ -164,6 +167,9 @@ exports.acceptOrder = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @desc    decline order of a client
+// @route   PUT /api/order/decline
+// @access  Private
 exports.declineOrder = asyncHandler(async (req, res, next) => {
   const orderId = req.body.orderId;
 
@@ -187,6 +193,9 @@ exports.declineOrder = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @desc    submit work of a artist to order
+// @route   PATCH /api/order/submit
+// @access  Private
 exports.submitOrder = asyncHandler(async (req, res, next) => {
   const { date_liv, image_liv, orderId } = req.body;
 
