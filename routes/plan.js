@@ -15,6 +15,8 @@ router.post(
   PC.subscribe
 );
 
+router.get("/plans", MW.protect, PC.getPlans);
+router.get("/history", MW.protect, PC.getHistorique);
 router.get("/activePlan", MW.protect, PC.getActivePlan);
 
 module.exports = router;

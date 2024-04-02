@@ -6,6 +6,7 @@ const Artist = require("../models/user");
 /**
  * @desc    Logout user and clear cookie
  * @route   PUT /api/artist/openOrder
+ * @params  normalPrice, rapidPrice
  * @access  Private
  */
 exports.openOrder = asyncHandler(async (req, res, next) => {
@@ -13,7 +14,7 @@ exports.openOrder = asyncHandler(async (req, res, next) => {
   if (!errors.isEmpty()) {
     return next(new HttpError("Invalid Inputs, check your data", 422));
   }
-  
+
   const { normalPrice, rapidPrice } = req.body;
   const artistId = req.user._id;
 

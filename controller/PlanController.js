@@ -3,6 +3,12 @@ const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Plan = require("../models/plan");
 
+/**
+ * @desc    subscribe to plan
+ * @route   POST /api/plan/subscribe
+ * @params  planType
+ * @access  Private
+ */
 exports.subscribe = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -14,12 +20,12 @@ exports.subscribe = asyncHandler(async (req, res, next) => {
 
   try {
     // Check if the artist has any active subscriptions
-    const activeSubscriptions = await Plan.findOne({
+    const activeSubscription = await Plan.findOne({
       artistId,
       dateEnd: { $gt: new Date() }, // Check if the end date is in the future
     });
 
-    if (activeSubscriptions) {
+    if (activeSubscription) {
       return res
         .status(400)
         .json({ message: "Artist already has an active subscription" });
@@ -44,6 +50,12 @@ exports.subscribe = asyncHandler(async (req, res, next) => {
   }
 });
 
+/**
+ * @desc    get all plans available
+ * @route   GET /api/plan/plans
+ * @access  Private
+ * @author  Admin
+ */
 exports.getPlans = asyncHandler(async (req, res, next) => {
   try {
     const plans = await Plan.find();
@@ -63,6 +75,11 @@ exports.getPlans = asyncHandler(async (req, res, next) => {
   }
 });
 
+/**
+ * @desc    get all history plans of an artist available
+ * @route   GET /api/plan/history
+ * @access  Private
+ */
 exports.getHistorique = asyncHandler(async (req, res, next) => {
   const artistId = req.user._id;
 
@@ -86,6 +103,11 @@ exports.getHistorique = asyncHandler(async (req, res, next) => {
   }
 });
 
+/**
+ * @desc    get active current plan of an artist
+ * @route   GET /api/plan/activePlan
+ * @access  Private
+ */
 exports.getActivePlan = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
