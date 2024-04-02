@@ -2,6 +2,7 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Artist = require("../models/user");
+const Plan = require("../models/plan");
 
 /**
  * @desc    Logout user and clear cookie
@@ -65,3 +66,4 @@ exports.socialMedia = asyncHandler(async (req, res, next) => {
     artist,
   });
 });
+
