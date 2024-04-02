@@ -15,7 +15,20 @@ router.post(
       .withMessage("Service type must be 'rapid' or 'normal'"),
   ],
   MW.protect,
-    OC.makeOrder
+  OC.makeOrder
 );
+
+router.put("/accept", MW.protect, OC.acceptOrder);
+router.put("/decline", MW.protect, OC.declineOrder);
+
+router.patch(
+  "/submit",
+  [check("date_live").isDate().withMessage("date entred is not a valid date")],
+  MW.protect,
+  OC.submitOrder
+);
+
+// just for testing
+router.get("/find",MW.protect,OC.findOrder);
 
 module.exports = router;

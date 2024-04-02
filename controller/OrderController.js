@@ -158,6 +158,15 @@ exports.acceptOrder = asyncHandler(async (req, res, next) => {
       return next(new HttpError("Order not found", 404));
     }
 
+    const notification = new OrderNotification({
+      recipientId: order.clientId,
+      senderId: order.artistId,
+      action: "accepted",
+      orderId: order._id,
+    });
+
+    await notification.save();
+
     // send a real time notification to the client , accepting info
     io.to(order.clientId).emit("orderAccept", { orderId: order._id });
 
@@ -184,6 +193,15 @@ exports.declineOrder = asyncHandler(async (req, res, next) => {
       return next(new HttpError("Order not found", 404));
     }
 
+    const notification = new OrderNotification({
+      recipientId: order.clientId,
+      senderId: order.artistId,
+      action: "decline",
+      orderId: order._id,
+    });
+
+    await notification.save();
+
     // send a real time notification to the client , accepting info
     io.to(order.clientId).emit("orderDecline", { orderId: order._id });
 
@@ -200,7 +218,7 @@ exports.submitOrder = asyncHandler(async (req, res, next) => {
   const { date_liv, image_liv, orderId } = req.body;
 
   try {
-    const order = await Order.findById(orderId);
+    const order = await Order.findOne(orderId);
     if (!order) {
       return next(new HttpError("Order not found", 404));
     }
@@ -209,12 +227,22 @@ exports.submitOrder = asyncHandler(async (req, res, next) => {
     order.image_liv = image_liv;
     order.status = "completed";
 
+    const notification = new OrderNotification({
+      recipientId: order.clientId,
+      senderId: order.artistId,
+      action: "completed",
+      orderId: order._id,
+    });
+
     try {
-      await order.save();
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      await order.save({ session });
+      await notification.save({ session });
+      await session.commitTransaction();
+      session.endSession();
     } catch (e) {
-      return next(
-        new HttpError("Couldn't subimt the order", 500)
-      );
+      return next(new HttpError("Couldn't subimt the order", 500));
     }
 
     // Send a real-time notification to the client
@@ -224,4 +252,15 @@ exports.submitOrder = asyncHandler(async (req, res, next) => {
   } catch (error) {
     return next(new HttpError("Failed to submit the order", 500));
   }
+});
+
+// just for testing 
+exports.findOrder = asyncHandler(async (req, res, next) => {
+  const { orderId } = req.body;
+
+    const order = await Order.findOne({orderId});
+    if (!order) {
+      return next(new HttpError("Order not found", 404));
+    }
+    res.status(200).json({ message: "Order submitted successfully", order });
 });
