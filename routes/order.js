@@ -15,7 +15,7 @@ router.post(
       .withMessage("Service type must be 'rapid' or 'normal'"),
   ],
   MW.protect,
-  OC.makeOrder
+    OC.makeOrder
 );
 
 module.exports = router;

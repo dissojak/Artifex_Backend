@@ -2,6 +2,7 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Order = require("../models/order");
+const User = require("../models/user");
 const OrderNotification = require("../models/orderNotification");
 const mongoose = require("mongoose");
 
@@ -80,16 +81,16 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   const clientId = req.user._id;
 
   const orderId = await generateOrderId();
+  const date = new Date();
 
   const order = new Order({
     orderId,
-    date: new Date(),
+    date,
     serviceType,
     clientId,
     artistId,
     description,
   });
-  console.log(order);
 
   const notification = new OrderNotification({
     recipientId: artistId,
@@ -97,7 +98,6 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     action: "create",
     orderId: order._id,
   });
-  console.log(notification);
 
   try {
     const session = await mongoose.startSession();
@@ -112,19 +112,28 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const orderDetails = await Order.findOne({ orderId:order._id }).populate(
-    "clientId"
-  );
-  if (!orderDetails) {
-    return next(new HttpError("Couldn't find order", 422));
+  const client = await User.findById(clientId);
+  if (!client) {
+    return next(new HttpError("Couldn't find this client", 422));
   }
+  const orderNotificationDetails = {
+    orderId,
+    username: client.username,
+    profileImage: client.profileImage,
+    serviceType,
+    date,
+  };
+  console.log(orderNotificationDetails);
 
-  try {
-    io.to(artistId).emit("newOrder", { orderDetails });
-    console.log("Real-time notification sent to artist");
-  } catch (err) {
-    return next(new HttpError("Couldn't send the real-time notification", 500));
-  }
+  // try {
+  //   io.to(artistId).emit("newOrder", { orderNotificationDetails });
+  //   console.log("Real-time notification sent to artist");
+  // } catch (err) {
+  //   return next(new HttpError("Couldn't send the real-time notification", 500));
+  // }
+
+  io.to(artistId).emit("newOrder", { orderNotificationDetails });
+  console.log("Real-time notification sent to artist");
 
   res.status(201).json({
     message: "Order created successfully",

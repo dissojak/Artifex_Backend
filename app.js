@@ -29,6 +29,14 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+io.on('connection', (socket) => {
+  console.log('Client connected');
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+});
+
 app.use(cors());
 
 app.use(bodyParser.json());
@@ -46,14 +54,6 @@ app.use((req, res, next) => {
   );
   // res.setHeader("Content-Type", "multipart/form-data");
   next();
-});
-
-io.on('connection', (socket) => {
-  console.log('Client connected');
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
 });
 
 app.use("/api/user", user);
@@ -104,5 +104,5 @@ mongoose
     app.listen(5000);
   })
   .catch((err) => {
-    console.log("MongoDB connection error:",err);
+    console.log("MongoDB connection error:",err); 
   });
