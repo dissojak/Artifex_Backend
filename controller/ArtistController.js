@@ -2,7 +2,6 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Artist = require("../models/user");
-const Plan = require("../models/plan");
 
 /**
  * @desc    Logout user and clear cookie
@@ -10,6 +9,11 @@ const Plan = require("../models/plan");
  * @access  Private
  */
 exports.openOrder = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError("Invalid Inputs, check your data", 422));
+  }
+  
   const { normalPrice, rapidPrice } = req.body;
   const artistId = req.user._id;
 
@@ -66,4 +70,3 @@ exports.socialMedia = asyncHandler(async (req, res, next) => {
     artist,
   });
 });
-
