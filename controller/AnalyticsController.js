@@ -3,9 +3,14 @@ const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Analytics = require("../models/analytics");
 
+/**
+ * @desc    get Artist Analytics
+ * @route   POST /api/analytics/getArtistAnalytics
+ * @access  Private
+ */
 exports.getAnalytics = asyncHandler(async (req, res, next) => {
   const artistId = req.user._id;
-  
+
   //   just for test
   // const artistId = req.params.artistId;
 
