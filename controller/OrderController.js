@@ -123,7 +123,6 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     serviceType,
     date,
   };
-  console.log(orderNotificationDetails);
 
   // try {
   //   io.to(artistId).emit("newOrder", { orderNotificationDetails });
