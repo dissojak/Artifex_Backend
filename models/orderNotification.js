@@ -13,7 +13,7 @@ const orderNotificationSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ['create', 'submit', 'accept', 'decline'],
+    enum: ['create', 'done' , 'reject'],
     required: true
   },
   orderId: {

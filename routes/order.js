@@ -18,8 +18,7 @@ router.post(
   OC.makeOrder
 );
 
-router.put("/accept", MW.protect, OC.acceptOrder);
-router.put("/decline", MW.protect, OC.declineOrder);
+router.put("/reject", MW.protect, OC.rejectOrder);
 
 router.patch(
   "/submit",

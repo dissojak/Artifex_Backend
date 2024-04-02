@@ -141,126 +141,81 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    accept order of a client
-// @route   PUT /api/order/accept
+// @desc    reject order of a client
+// @route   PUT /api/order/reject
 // @access  Private
-exports.acceptOrder = asyncHandler(async (req, res, next) => {
+exports.rejectOrder = asyncHandler(async (req, res, next) => {
   const orderId = req.body.orderId;
 
-  try {
-    const order = await Order.findOneAndUpdate(
-      { _id: orderId },
-      { status: "accepted" },
-      { new: true }
-    );
+  const order = await Order.findOneAndUpdate(
+    { orderId },
+    { status: "rejected" },
+    { new: true }
+  );
 
-    if (!order) {
-      return next(new HttpError("Order not found", 404));
-    }
-
-    const notification = new OrderNotification({
-      recipientId: order.clientId,
-      senderId: order.artistId,
-      action: "accepted",
-      orderId: order._id,
-    });
-
-    await notification.save();
-
-    // send a real time notification to the client , accepting info
-    io.to(order.clientId).emit("orderAccept", { orderId: order._id });
-
-    res.status(200).json({ message: "Order accepted successfully", order });
-  } catch (error) {
-    return next(new HttpError("Failed to accept the order", 500));
+  if (!order) {
+    return next(new HttpError("Order not found", 404));
   }
-});
 
-// @desc    decline order of a client
-// @route   PUT /api/order/decline
-// @access  Private
-exports.declineOrder = asyncHandler(async (req, res, next) => {
-  const orderId = req.body.orderId;
+  const notification = new OrderNotification({
+    recipientId: order.clientId,
+    senderId: order.artistId,
+    action: "reject",
+    orderId: order._id,
+  });
 
-  try {
-    const order = await Order.findOneAndUpdate(
-      { _id: orderId },
-      { status: "decline" },
-      { new: true }
-    );
+  await notification.save();
 
-    if (!order) {
-      return next(new HttpError("Order not found", 404));
-    }
+  // send a real time notification to the client , accepting info
+  io.to(order.clientId).emit("orderRejected", { orderId: order._id });
 
-    const notification = new OrderNotification({
-      recipientId: order.clientId,
-      senderId: order.artistId,
-      action: "decline",
-      orderId: order._id,
-    });
-
-    await notification.save();
-
-    // send a real time notification to the client , accepting info
-    io.to(order.clientId).emit("orderDecline", { orderId: order._id });
-
-    res.status(200).json({ message: "Order declined  successfully", order });
-  } catch (error) {
-    return next(new HttpError("Failed to decline the order", 500));
-  }
+  res.status(200).json({ message: "Order reject  successfully", order });
 });
 
 // @desc    submit work of a artist to order
 // @route   PATCH /api/order/submit
 // @access  Private
 exports.submitOrder = asyncHandler(async (req, res, next) => {
-  const { date_liv, image_liv, orderId } = req.body;
+  const { image_liv, orderId } = req.body;
+
+  const order = await Order.findOneAndUpdate(
+    { orderId },
+    {
+      date_liv: new Date(),
+      status: "completed",
+      image_liv,
+    },
+    { new: true }
+  );
 
   try {
-    const order = await Order.findOne(orderId);
-    if (!order) {
-      return next(new HttpError("Order not found", 404));
-    }
-
-    order.date_liv = date_liv;
-    order.image_liv = image_liv;
-    order.status = "completed";
-
-    const notification = new OrderNotification({
-      recipientId: order.clientId,
-      senderId: order.artistId,
-      action: "completed",
-      orderId: order._id,
-    });
-
-    try {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-      await order.save({ session });
-      await notification.save({ session });
-      await session.commitTransaction();
-      session.endSession();
-    } catch (e) {
-      return next(new HttpError("Couldn't subimt the order", 500));
-    }
-
-    // Send a real-time notification to the client
-    io.to(order.clientId).emit("orderSubmit", { orderId: order._id });
-
-    res.status(200).json({ message: "Order submitted successfully", order });
-  } catch (error) {
-    return next(new HttpError("Failed to submit the order", 500));
+    await order.save();
+  } catch (e) {
+    return next(new HttpError("Couldn't subimt the order", 500));
   }
+
+  const notification = new OrderNotification({
+    recipientId: order.clientId,
+    senderId: order.artistId,
+    action: "done",
+    orderId: order._id,
+  });
+
+  await notification.save();
+
+  // Send a real-time notification to the client
+  io.to(order.clientId).emit("orderSubmit", { orderId: order._id });
+
+  res.status(200).json({ message: "Order submitted successfully", order });
 });
 
-// just for testing 
+// just for testing
 exports.findOrder = asyncHandler(async (req, res, next) => {
   const { orderId } = req.body;
 
-    const order = await Order.findOne({orderId});
-    if (!order) {
-      return next(new HttpError("Order not found", 404));
-    }
-    res.status(200).json({ message: "Order submitted successfully", order });
+  const order = await Order.findOne({ orderId });
+  if (!order) {
+    return next(new HttpError("Order not found", 404));
+  }
+  res.status(200).json({ message: "Order submitted successfully", order });
 });
