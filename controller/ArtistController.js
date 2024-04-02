@@ -3,6 +3,11 @@ const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Artist = require("../models/user");
 
+/**
+ * @desc    Logout user and clear cookie
+ * @route   PUT /api/artist/openOrder
+ * @access  Private
+ */
 exports.openOrder = asyncHandler(async (req, res, next) => {
     const { normalPrice, rapidPrice } = req.body;
     const artistId = req.user._id;
