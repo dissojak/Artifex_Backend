@@ -19,6 +19,8 @@ router.post(
 );
 
 router.put("/reject", MW.protect, OC.rejectOrder);
+router.put("/accept", MW.protect, OC.acceptOrder);
+
 
 router.patch(
   "/submit",

@@ -141,6 +141,40 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    accept order of a client
+// @route   PUT /api/order/accept
+// @access  Private
+exports.acceptOrder = asyncHandler(async (req, res, next) => {
+  const orderId = req.body.orderId;
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId },
+      { status: "accepted" },
+      { new: true }
+    );
+
+    if (!order) {
+      return next(new HttpError("Order not found", 404));
+    }
+
+    const notification = new OrderNotification({
+      recipientId: order.clientId,
+      senderId: order.artistId,
+      action: "accept",
+      orderId: order._id,
+    });
+
+    await notification.save();
+
+    // send a real time notification to the client , accepting info
+    io.to(order.clientId).emit("orderAccept", { orderId: order._id });
+
+    res.status(200).json({ message: "Order accepted successfully", order });
+  } catch (error) {
+    return next(new HttpError("Failed to accept the order", 500));
+  }
+});
+
 // @desc    reject order of a client
 // @route   PUT /api/order/reject
 // @access  Private
@@ -171,6 +205,13 @@ exports.rejectOrder = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({ message: "Order reject  successfully", order });
 });
+
+/*
+also we need to sett the status of the order to payed 
+after the artist accept it , it will apear pay to clinet 
+and when he pay it will be back too pending , adn send 
+notification to artist with action 'pay'
+*/
 
 // @desc    submit work of a artist to order
 // @route   PATCH /api/order/submit
