@@ -24,3 +24,5 @@ exports.getAnalytics = asyncHandler(async (req, res, next) => {
     analytics,
   });
 });
+
+exports.score 
