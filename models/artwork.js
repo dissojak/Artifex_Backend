@@ -34,10 +34,10 @@ const artworkSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User' 
   },
-  // Type of the artwork (public or private)
-  type: {
+  // visibility of the artwork (public or private)
+  visibility: {
     type: String,
-    enum: ['public', 'private'], // Type can only be 'public' or 'private'
+    enum: ['public', 'private'], // visibility can only be 'public' or 'private'
     default: 'public' // Default type is 'public'
   },
   // is Artwork exclusive or not ?
