@@ -4,5 +4,9 @@ const MuseumPinned = require("../models/museumPinned");
 const Museum = require("../models/museum");
 const User = require("../models/user");
 
-// Add your controller methods here
+exports.pinMuseum
+
+exports.unPinMuseum
+
+exports.getPinnedMuseum
 

@@ -4,21 +4,19 @@ const Museum = require("../models/museum");
 const Participant = require("../models/participant");
 const User = require("../models/user");
 
+exports.createMuseum
+
+exports.getMuseum
+
 exports.artistJoin
 
 exports.clientJoin
 
-exports.getMuseum
-
-exports.createMuseum
-
 exports.editMuseum
 
-exports.pinMuseum
+exports.addArtwork
 
-exports.unPinMuseum
 
-exports.getPinnedMuseum
 
 
 
