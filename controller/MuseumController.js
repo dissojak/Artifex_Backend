@@ -4,5 +4,21 @@ const Museum = require("../models/museum");
 const Participant = require("../models/participant");
 const User = require("../models/user");
 
-// Add your controller methods here
+exports.artistJoin
+
+exports.clientJoin
+
+exports.getMuseum
+
+exports.createMuseum
+
+exports.editMuseum
+
+exports.pinMuseum
+
+exports.unPinMuseum
+
+exports.getPinnedMuseum
+
+
 
