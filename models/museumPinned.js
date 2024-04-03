@@ -10,7 +10,7 @@ const museumPinnedSchema = new mongoose.Schema({
     required: true
   },
   // Museum ID that got liked
-  artworkId: {
+  museumId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Museum',
     required: true
