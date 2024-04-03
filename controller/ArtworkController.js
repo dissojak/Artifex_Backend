@@ -220,6 +220,29 @@ exports.editArtwork = asyncHandler(async (req, res, next) => {
   }
 });
 
+/**
+ * @desc    change visibility of artwork from public to private
+ * @route   PUT /api/artwork/private
+ * @params  artworkId
+ * @access  Private
+ */
+exports.makePrivate ;
+
+/**
+ * @desc    change visibility of artwork from private to public
+ * @route   PUT /api/artwork/public
+ * @params  artworkId
+ * @access  Private
+ */
+exports.makePublic ;
+
+
+/**
+ * @desc    get artworks for artist profile
+ * @route   GET /api/artwork/getArtworksByArtistId
+ * @params  artistId ( for not artist itself )
+ * @access  Private
+ */
 exports.getArtworksByArtistId = asyncHandler(async (req, res, next) => {
   const artistId = req.body.artistId || req.user._id;
 
