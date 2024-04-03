@@ -1,11 +1,29 @@
 const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
+const asyncHandler = require("express-async-handler");
 const Museum = require("../models/museum");
 const Participant = require("../models/participant");
 const User = require("../models/user");
 const mongoose = require("mongoose");
+const { isCategoryExist } = require("./CategoryController");
 
+/**
+ * @desc     Create a museum
+ * @function createMuseum
+ * @method   POST
+ * @route    POST /api/museum/create
+ * @params   title, description, numberMaxArtists, numberMaxClients,
+ *           priceClient, priceArtist, dateStart fomat:"2024-04-03",
+ *           dateEnd (ISO 8601), isExclusive, idCategory
+ * @access   Private
+ */
 exports.createMuseum = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    return next(new HttpError("Invalid Inputs, check your data", 422));
+  }
+
   const {
     title,
     description,
@@ -18,6 +36,14 @@ exports.createMuseum = asyncHandler(async (req, res, next) => {
     isExclusive,
     idCategory,
   } = req.body;
+
+  if (await Museum.findOne({ title })) {
+    return next(new HttpError("museum with this title already exist", 401));
+  }
+
+  if (!(await isCategoryExist(idCategory))) {
+    return next(new HttpError("category not found", 404));
+  }
 
   const museum = new Museum({
     title,
@@ -97,7 +123,14 @@ exports.getParticipantClients = asyncHandler(async (req, res, next) => {
   });
 });
 
+//----------------------- PAYMENT REQUIRED --------------------------
+
 exports.artistJoin = asyncHandler(async (req, res, next) => {
+  
+  //----------------------- THIS NEEED UPDATE --------------------------
+
+  // get also the artworks ids to add them to the museumArtwork
+  // and also to the museum list !
   const { museumId } = req.body;
   const artistId = req.user._id;
 
@@ -138,8 +171,51 @@ exports.artistJoin = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.clientJoin;
+//----------------------- PAYMENT REQUIRED --------------------------
+
+exports.clientJoin = asyncHandler(async (req, res, next) => {
+  const { museumId } = req.body;
+  const clinetId = req.user._id;
+
+  const existingParticipant = await Participant.findOne({
+    museumId,
+    participantId: clinetId,
+  });
+
+  if (existingParticipant) {
+    return next(
+      new HttpError("Artist is already a participant in this museum", 400)
+    );
+  }
+
+  const participant = new Participant({
+    museumId,
+    participantId: clinetId,
+    participantType: "client",
+  });
+
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    await participant.save({ session });
+    await Museum.findByIdAndUpdate(
+      museumId,
+      { $inc: { clientsEntered: 1 } },
+      { session }
+    );
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    return next(new HttpError("Failed to join the museum as an clinet", 500));
+  }
+
+  res.status(201).json({
+    message: "clinet successfully joined the museum",
+  });
+});
 
 exports.editMuseum;
 
 exports.addArtwork;
+
+exports.getMuseumsByDates;
