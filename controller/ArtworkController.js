@@ -52,7 +52,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
 exports.getArtworks = asyncHandler(async (req, res, next) => {
   try {
     const artworks = await Artwork.find({
-      type: "public",
+      visibility: "public",
       exclusive: false,
       isDeletedByUser: false,
     })
@@ -187,8 +187,7 @@ exports.editArtwork = asyncHandler(async (req, res, next) => {
 
   const artistId = req.user._id;
   const artworkId = req.params.artworkId;
-  const { title, description, price, imageArtwork, id_category} =
-    req.body;
+  const { title, description, price, imageArtwork, id_category } = req.body;
 
   try {
     let artwork = await Artwork.findById(artworkId);
@@ -226,7 +225,33 @@ exports.editArtwork = asyncHandler(async (req, res, next) => {
  * @params  artworkId
  * @access  Private
  */
-exports.makePrivate ;
+exports.makePrivate = asyncHandler(async (req, res, next) => {
+  const { artworkId } = req.body;
+
+  const artwork = await Artwork.findById(artworkId);
+
+  if (!artwork) {
+    return next(new HttpError("Artwork not found", 404));
+  }
+
+  if (artwork.id_artist.toString() !== req.user._id.toString()) {
+    return next(
+      new HttpError("You are not authorized to modify this artwork", 401)
+    );
+  }
+
+  artwork.visibility = "private";
+  try {
+    await artwork.save();
+  } catch (e) {
+    return next(new HttpError("Failed to update artwork visibility", 500));
+  }
+
+  res.status(200).json({
+    message: "Artwork is private now !",
+    artwork,
+  });
+});
 
 /**
  * @desc    change visibility of artwork from private to public
@@ -234,8 +259,33 @@ exports.makePrivate ;
  * @params  artworkId
  * @access  Private
  */
-exports.makePublic ;
+exports.makePublic = asyncHandler(async (req, res, next) => {
+  const { artworkId } = req.body;
 
+  const artwork = await Artwork.findById(artworkId);
+
+  if (!artwork) {
+    return next(new HttpError("Artwork not found", 404));
+  }
+
+  if (artwork.id_artist.toString() !== req.user._id.toString()) {
+    return next(
+      new HttpError("You are not authorized to modify this artwork", 401)
+    );
+  }
+
+  artwork.visibility = "public";
+  try {
+    await artwork.save();
+  } catch (e) {
+    return next(new HttpError("Failed to update artwork visibility", 500));
+  }
+
+  res.status(200).json({
+    message: "Artwork is public now !",
+    artwork,
+  });
+});
 
 /**
  * @desc    get artworks for artist profile
@@ -250,7 +300,9 @@ exports.getArtworksByArtistId = asyncHandler(async (req, res, next) => {
     const artworks = await Artwork.find({ id_artist: artistId });
 
     if (!artworks || artworks.length === 0) {
-      return res.status(404).json({ message: "No artworks found for this artist" });
+      return res
+        .status(404)
+        .json({ message: "No artworks found for this artist" });
     }
 
     res.status(200).json({
@@ -269,7 +321,9 @@ exports.getArtworksByCategory = asyncHandler(async (req, res, next) => {
     const artworks = await Artwork.find({ id_category: categoryId });
 
     if (!artworks || artworks.length === 0) {
-      return res.status(404).json({ message: "No artworks found for this category" });
+      return res
+        .status(404)
+        .json({ message: "No artworks found for this category" });
     }
 
     res.status(200).json({
