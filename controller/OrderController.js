@@ -6,6 +6,7 @@ const User = require("../models/user");
 const OrderNotification = require("../models/orderNotification");
 const mongoose = require("mongoose");
 
+
 // @desc    Get orders for a specific client
 // @route   GET /api/order/client
 // @access  Private
@@ -79,6 +80,9 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   }
   const { artistId, description, serviceType } = req.body;
   const clientId = req.user._id;
+  const io = req.app.io;
+  const idSocket = req.app.idSocket;
+
 
   const orderId = await generateOrderId();
   const date = new Date();
@@ -132,7 +136,8 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   // }
 
   // send a real time notification to the artist about order
-  io.to(artistId).emit("newOrder", { orderNotificationDetails });
+  console.log(idSocket);
+  io.to(idSocket).emit("newOrder", { orderNotificationDetails });
   console.log("Real-time notification sent to artist");
 
   res.status(201).json({

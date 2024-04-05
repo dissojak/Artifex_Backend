@@ -5,7 +5,7 @@ const { check } = require("express-validator");
 const router = express.Router();
 
 router.post(
-  "/newOrder",
+  "/new",
   [
     check("description")
       .isLength({ max: 50 })

@@ -27,14 +27,18 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+let idSocket
 io.on("connection", (socket) => { 
   console.log("Client connected");
-  console.log(socket);
-
+  idSocket=socket.id
+  console.log(idSocket);
+  app.idSocket = idSocket;
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
 });
+
+app.io = io;
 
 app.use(cors());
 
