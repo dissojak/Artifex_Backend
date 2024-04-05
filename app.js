@@ -27,8 +27,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-io.on("connection", (socket) => {
+io.on("connection", (socket) => { 
   console.log("Client connected");
+  console.log(socket);
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
@@ -95,7 +96,7 @@ mongoose
     "mongodb+srv://dissojak:stoondissojakb2a@stoon.r8tcyqv.mongodb.net/ARTIFEX?retryWrites=true&w=majority"
   )
   .then(() => {
-    app.listen(5000);
+    server.listen(5000);
   })
   .catch((err) => {
     console.log("MongoDB connection error:", err);
