@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const HttpError = require("./models/http-error");
 const http = require("http");
 const socketIo = require("socket.io");
+const jwt = require("jsonwebtoken");
 
 const user = require("./routes/user");
 const artist = require("./routes/artist");
@@ -22,22 +23,40 @@ const category = require("./routes/category");
 const analytics = require("./routes/analytics");
 const report = require("./routes/report");
 const likedSaved = require("./routes/savedLikedArtworks");
+const { stringify } = require("querystring");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+const JWT_SECRET = "abc123";
 
-let idSocket
-io.on("connection", (socket) => { 
-  console.log("Client connected");
-  idSocket=socket.id
-  console.log(idSocket);
-  app.idSocket = idSocket;
+let socketIds = [];
+io.on("connection", (socket) => {
+
+  console.log("Client connected", socket.id);
+  const socketId = socket.id;
+
+  socket.on("AuthSocket", (token) => {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    const item = {
+      userId,
+      socketId,
+    };
+    console.log("the item : ",item);
+    socketIds.push(item);
+    console.log("the update of the list is : ",socketIds);
+  });
   socket.on("disconnect", () => {
+    socketIds = socketIds.filter((item) => item.socketId !== socket.id);
+    app.socketIds = socketIds;
+    console.log("the list in disconnection: ",socketIds);
     console.log("Client disconnected");
   });
 });
 
+app.socketIds = socketIds;
 app.io = io;
 
 app.use(cors());
