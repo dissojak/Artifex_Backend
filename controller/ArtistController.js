@@ -71,3 +71,24 @@ exports.socialMedia = asyncHandler(async (req, res, next) => {
     artist,
   });
 });
+
+/**
+ * @desc    Get artist by ID
+ * @params  id
+ */
+exports.getArtistById = async (id) => {
+  try {
+    const artist = await Artist.findOne({ _id: id, userType: "artist" });
+
+    if (!artist) {
+      return next(new HttpError("Artist not found", 404));
+    }
+
+    res.status(200).json({
+      message: "Artist fetched successfully",
+      artist,
+    });
+  } catch (error) {
+    return next(new HttpError("Failed to fetch artist", 500));
+  }
+};
