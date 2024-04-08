@@ -23,7 +23,6 @@ const category = require("./routes/category");
 const analytics = require("./routes/analytics");
 const report = require("./routes/report");
 const likedSaved = require("./routes/savedLikedArtworks");
-const { stringify } = require("querystring");
 
 const app = express();
 const server = http.createServer(app);

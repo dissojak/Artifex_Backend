@@ -2,6 +2,8 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 const Artwork = require("../models/artwork");
+const mongoose = require("mongoose");
+const { getArtistById } = require("../controller/ArtistController");
 
 /**
  * @desc    Add new artwork
@@ -16,32 +18,76 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
     return next(new HttpError("Invalid data", 400));
   }
 
+  const io = req.app.io;
+  const socketIds = req.app.socketIds;
   const artistId = req.user._id;
   const { title, description, price, imageArtwork, id_category, exclusive } =
     req.body;
 
+  // Create new artwork instance
+  const newArtwork = new Artwork({
+    title,
+    description,
+    price,
+    imageArtwork,
+    id_category,
+    id_artist: artistId,
+    exclusive: exclusive || false,
+  });
+  let artwork;
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    // Create new artwork instance
-    const newArtwork = new Artwork({
-      title,
-      description,
-      price,
-      imageArtwork,
-      id_category,
-      id_artist: artistId,
-      exclusive: exclusive || false,
-    });
-
-    // Save artwork to database
-    const artwork = await newArtwork.save();
-
-    res.json({
-      msg: "Artwork added successfully",
-      artwork,
-    });
-  } catch (error) {
-    next(new HttpError(error.message || "Failed to add artwork", 500));
+    artwork = await newArtwork.save({ session });
+  } catch (e) {
+    return next(new HttpError("artwork not saved , error hapnned :", e, 500));
   }
+  const artist = await getArtistById(artistId);
+
+  followers.forEach(async (follower) => {
+    const clientSocketEntry = socketIds.find(
+      (entry) => entry.userId.toString() === follower.clientId.toString()
+    );
+
+    if (clientSocketEntry) {
+      const clientSocketId = clientSocketEntry.socketId;
+      io.to(clientSocketId).emit("newArtwork", {
+        msg: "A new artwork has been added by an artist you follow",
+        artwork,
+        artist,
+      });
+      console.log({
+        msg: "A new artwork has been added by an artist you follow",
+        artwork,
+        artist,
+      });
+
+      // Optionally, save a notification for this event
+      const notification = new ArtworkNotification({
+        recipientId: follower.clientId,
+        senderId: artistId,
+        action: "create",
+        artworkId: artwork._id,
+      });
+      try {
+        await notification.save({ session });
+      } catch (e) {
+        return next(
+          new HttpError(
+            "artwork not saved cuz of notification saving process, error hapnned :",
+            e,
+            500
+          )
+        );
+      }
+    }
+  });
+  await session.commitTransaction();
+  session.endSession();
+  res.json({
+    msg: "Artwork added successfully",
+    artwork,
+  });
 });
 
 /**

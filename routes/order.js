@@ -32,4 +32,6 @@ router.patch(
 // just for testing
 router.get("/find",MW.protect,OC.findOrder);
 
+router.get("/list",OC.list);
+
 module.exports = router;

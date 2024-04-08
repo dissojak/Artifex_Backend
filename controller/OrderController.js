@@ -6,7 +6,6 @@ const User = require("../models/user");
 const OrderNotification = require("../models/orderNotification");
 const mongoose = require("mongoose");
 
-
 // @desc    Get orders for a specific client
 // @route   GET /api/order/client
 // @access  Private
@@ -81,8 +80,7 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
   const { artistId, description, serviceType } = req.body;
   const clientId = req.user._id;
   const io = req.app.io;
-  const idSocket = req.app.idSocket;
-
+  const socketIds = req.app.socketIds;
 
   const orderId = await generateOrderId();
   const date = new Date();
@@ -128,17 +126,24 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     date,
   };
 
-  // try {
-  //   io.to(artistId).emit("newOrder", { orderNotificationDetails });
-  //   console.log("Real-time notification sent to artist");
-  // } catch (err) {
-  //   return next(new HttpError("Couldn't send the real-time notification", 500));
-  // }
-
-  // send a real time notification to the artist about order
-  console.log(idSocket);
-  io.to(idSocket).emit("newOrder", { orderNotificationDetails });
-  console.log("Real-time notification sent to artist");
+  try {
+    const artistSocketEntry = socketIds.find(
+      (entry) => entry.userId.toString() === artistId.toString()
+    );
+    if (artistSocketEntry) {
+      const artistSocketId = artistSocketEntry.socketId;
+      // Now, use artistSocketId to send the notification
+      io.to(artistSocketId).emit("newOrder", { orderNotificationDetails });
+      console.log(
+        "Real-time notification sent to artist with socket ID",
+        artistSocketId
+      );
+    } else {
+      console.log("Artist's socket ID not found.");
+    }
+  } catch (err) {
+    return next(new HttpError("Couldn't send the real-time notification", 500));
+  }
 
   res.status(201).json({
     message: "Order created successfully",
@@ -151,30 +156,44 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.acceptOrder = asyncHandler(async (req, res, next) => {
   const orderId = req.body.orderId;
-  
-    const order = await Order.findOneAndUpdate(
-      { orderId },
-      { status: "accepted" },
-      { new: true }
+  const io = req.app.io;
+  const socketIds = req.app.socketIds;
+
+  const order = await Order.findOneAndUpdate(
+    { orderId },
+    { status: "accepted" },
+    { new: true }
+  );
+
+  if (!order) {
+    return next(new HttpError("Order not found", 404));
+  }
+
+  const notification = new OrderNotification({
+    recipientId: order.clientId,
+    senderId: order.artistId,
+    action: "accept",
+    orderId: order._id,
+  });
+
+  await notification.save();
+
+  const clientSocketEntry = socketIds.find(
+    (entry) => entry.userId.toString() === order.clientId.toString()
+  );
+  if (clientSocketEntry) {
+    const clientSocketId = clientSocketEntry.socketId;
+    io.to(clientSocketId).emit("orderAccept", { orderId: order._id });
+    console.log(
+      "Order acceptance notification sent to client with socket ID",
+      clientSocketId
     );
-
-    if (!order) {
-      return next(new HttpError("Order not found", 404));
-    }
-
-    const notification = new OrderNotification({
-      recipientId: order.clientId,
-      senderId: order.artistId,
-      action: "accept",
-      orderId: order._id,
-    });
-
-    await notification.save();
-
-    // send a real time notification to the client , accepting info
-    io.to(order.clientId).emit("orderAccept", { orderId: order._id });
-
-    res.status(200).json({ message: "Order accepted successfully", order });
+  } else {
+    console.log(
+      "Client's socket ID not found, could not send real-time notification."
+    );
+  }
+  res.status(200).json({ message: "Order accepted successfully", order });
 });
 
 // @desc    reject order of a client
@@ -182,6 +201,8 @@ exports.acceptOrder = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.rejectOrder = asyncHandler(async (req, res, next) => {
   const orderId = req.body.orderId;
+  const io = req.app.io;
+  const socketIds = req.app.socketIds;
 
   const order = await Order.findOneAndUpdate(
     { orderId },
@@ -202,8 +223,21 @@ exports.rejectOrder = asyncHandler(async (req, res, next) => {
 
   await notification.save();
 
-  // send a real time notification to the client , accepting info
-  io.to(order.clientId).emit("orderRejected", { orderId: order._id });
+  const clientSocketEntry = socketIds.find(
+    (entry) => entry.userId.toString() === order.clientId.toString()
+  );
+  if (clientSocketEntry) {
+    const clientSocketId = clientSocketEntry.socketId;
+    io.to(clientSocketId).emit("orderRejected", { orderId: order._id });
+    console.log(
+      "Order rejection notification sent to client with socket ID",
+      clientSocketId
+    );
+  } else {
+    console.log(
+      "Client's socket ID not found, could not send real-time notification."
+    );
+  }  
 
   res.status(200).json({ message: "Order reject  successfully", order });
 });
@@ -211,7 +245,7 @@ exports.rejectOrder = asyncHandler(async (req, res, next) => {
 /*
 also we need to sett the status of the order to payed 
 after the artist accept it , it will apear pay to clinet 
-and when he pay it will be back too pending , adn send 
+and when he pay it will be back too pending , and send 
 notification to artist with action 'pay'
 */
 
@@ -220,6 +254,8 @@ notification to artist with action 'pay'
 // @access  Private
 exports.submitOrder = asyncHandler(async (req, res, next) => {
   const { image_liv, orderId } = req.body;
+  const io = req.app.io;
+  const socketIds = req.app.socketIds;
 
   const order = await Order.findOneAndUpdate(
     { orderId },
@@ -246,9 +282,22 @@ exports.submitOrder = asyncHandler(async (req, res, next) => {
 
   await notification.save();
 
-  // Send a real-time notification to the client
-  io.to(order.clientId).emit("orderSubmit", { orderId: order._id });
-
+  const clientSocketEntry = socketIds.find(
+    (entry) => entry.userId.toString() === order.clientId.toString()
+  );
+  if (clientSocketEntry) {
+    const clientSocketId = clientSocketEntry.socketId;
+    io.to(clientSocketId).emit("orderSubmit", { orderId: order._id });
+    console.log(
+      "Order submission notification sent to client with socket ID",
+      clientSocketId
+    );
+  } else {
+    console.log(
+      "Client's socket ID not found, could not send real-time notification."
+    );
+  }
+  
   res.status(200).json({ message: "Order submitted successfully", order });
 });
 
@@ -262,3 +311,8 @@ exports.findOrder = asyncHandler(async (req, res, next) => {
   }
   res.status(200).json({ message: "Order submitted successfully", order });
 });
+
+exports.list = async (req, res, next) => {
+  res.status(200).json({ socketIds: req.app.socketIds });
+  console.log(req.app.socketIds);
+};
