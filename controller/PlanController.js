@@ -138,3 +138,18 @@ exports.getActivePlan = asyncHandler(async (req, res, next) => {
     activePlan,
   });
 });
+
+exports.checkPlan=async (artistId) =>{
+  let activePlan;
+
+    activePlan = await Plan.findOne({
+      artistId,
+      dateEnd: { $gt: new Date() },
+    });
+
+    if(!activePlan){
+      return "normal";
+    }
+  console.log("plan is : ",activePlan.planType);
+  return activePlan.planType;
+}

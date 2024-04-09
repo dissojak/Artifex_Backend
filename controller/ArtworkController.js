@@ -4,6 +4,7 @@ const asyncHandler = require("express-async-handler");
 const Artwork = require("../models/artwork");
 const mongoose = require("mongoose");
 const { getArtistById } = require("../controller/ArtistController");
+const { calculateScore } = require("./AnalyticsController");
 
 /**
  * @desc    Add new artwork
@@ -100,7 +101,7 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
     const artworks = await Artwork.find({
       visibility: "public",
       exclusive: false,
-      isDeletedByUser: false,
+      isDeletedByOwner: false,
     })
       .populate({
         path: "id_category", // Populate the 'id_category' field
@@ -115,6 +116,20 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
     if (!artworks || artworks.length === 0) {
       return next(new HttpError("Artworks not found", 404));
     }
+
+    // Fetch scores for all artists
+    const scores = await Promise.all(artworks.map(async artwork => ({
+      artworkId: artwork._id,
+      // check analytic controller for calculateScore
+      score: await calculateScore(artwork.id_artist._id),
+    })));
+
+    // Sort artworks based on the fetched scores
+    artworks.sort((a, b) => {
+      const scoreA = scores.find(score => score.artworkId.equals(a._id)).score;
+      const scoreB = scores.find(score => score.artworkId.equals(b._id)).score;
+      return scoreB - scoreA;
+    });
 
     res.json({
       msg: "Artworks retrieved successfully",
