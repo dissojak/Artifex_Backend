@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const Artist = require("../models/user");
 
 /**
- * @desc    Logout user and clear cookie
+ * @desc    open the order feature fro clients by artist
  * @route   PUT /api/artist/openOrder
  * @params  normalPrice, rapidPrice
  * @access  Private
