@@ -1,5 +1,6 @@
 const express = require("express");
 const MC = require("../controller/MuseumController");
+const MPC =require("../controller/MuseumPinnedController");
 const MW = require("../middleware/authMiddleware");
 const { check } = require("express-validator");
 const router = express.Router();
@@ -83,5 +84,8 @@ router.post("/addExclusiveArtwork", MW.protect,
 MC.addExclusiveArtwork);
 
 router.get('/byDate',MW.protect, MC.getMuseumsByDates);
+router.post('/pin',MW.protect,MPC.pinMuseum); 
+router.delete("/unpin",MW.protect,MPC.unPinMuseum);
+router.get('/PinnedMuseums',MW.protect,MPC.getPinnedMuseum);
 
 module.exports = router;
