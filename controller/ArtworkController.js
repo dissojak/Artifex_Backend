@@ -5,6 +5,7 @@ const Artwork = require("../models/artwork");
 const mongoose = require("mongoose");
 const { getArtistById } = require("../controller/ArtistController");
 const { calculateScore } = require("./AnalyticsController");
+const axios = require("axios");
 
 /**
  * @desc    Add new artwork
@@ -22,6 +23,7 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
   const io = req.app.io;
   const socketIds = req.app.socketIds;
   const artistId = req.user._id;
+  console.log("artist id is : ", artistId);
   const { title, description, price, imageArtwork, id_category, exclusive } =
     req.body;
 
@@ -36,10 +38,11 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
     exclusive: exclusive || false,
   });
   let artwork;
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // const session = await mongoose.startSession();
+  // session.startTransaction();
   try {
-    artwork = await newArtwork.save({ session });
+    // artwork = await newArtwork.save({ session });
+    artwork = await newArtwork.save();
   } catch (e) {
     return next(new HttpError("artwork not saved , error hapnned :", e, 500));
   }
@@ -71,20 +74,21 @@ exports.addArtwork = asyncHandler(async (req, res, next) => {
         artworkId: artwork._id,
       });
       try {
-        await notification.save({ session });
+        // await notification.save({ session });
+        await notification.save();
       } catch (e) {
         return next(
           new HttpError(
             "artwork not saved cuz of notification saving process, error hapnned :",
             e,
-            500
+            505
           )
         );
       }
     }
   });
-  await session.commitTransaction();
-  session.endSession();
+  // await session.commitTransaction();
+  // session.endSession();
   res.json({
     msg: "Artwork added successfully",
     artwork,
@@ -102,6 +106,7 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
       visibility: "public",
       exclusive: false,
       isDeletedByOwner: false,
+      Sold: false,
     })
       .populate({
         path: "id_category", // Populate the 'id_category' field
@@ -118,16 +123,22 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
     }
 
     // Fetch scores for all artists
-    const scores = await Promise.all(artworks.map(async artwork => ({
-      artworkId: artwork._id,
-      // check analytic controller for calculateScore
-      score: await calculateScore(artwork.id_artist._id),
-    })));
+    const scores = await Promise.all(
+      artworks.map(async (artwork) => ({
+        artworkId: artwork._id,
+        // check analytic controller for calculateScore
+        score: await calculateScore(artwork.id_artist._id),
+      }))
+    );
 
     // Sort artworks based on the fetched scores
     artworks.sort((a, b) => {
-      const scoreA = scores.find(score => score.artworkId.equals(a._id)).score;
-      const scoreB = scores.find(score => score.artworkId.equals(b._id)).score;
+      const scoreA = scores.find((score) =>
+        score.artworkId.equals(a._id)
+      ).score;
+      const scoreB = scores.find((score) =>
+        score.artworkId.equals(b._id)
+      ).score;
       return scoreB - scoreA;
     });
 
@@ -203,7 +214,7 @@ exports.deleteArtworkByAdmin = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 exports.deleteArtwork = asyncHandler(async (req, res, next) => {
-  const artworkId = req.params.artworkId;
+  const artworkId = req.body.artworkId;
 
   try {
     let artwork = await Artwork.findById(artworkId);
@@ -349,6 +360,27 @@ exports.makePublic = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * @desc    Check visibility of artwork
+ * @route   GET /api/artwork/visibility/:artworkId
+ * @params  artworkId
+ * @access  Private
+ */
+exports.checkVisibility = asyncHandler(async (req, res, next) => {
+  const { artworkId } = req.params;
+
+  const artwork = await Artwork.findById(artworkId);
+
+  if (!artwork) {
+    return next(new HttpError("Artwork not found", 404));
+  }
+
+  res.status(200).json({
+    message: "Artwork visibility retrieved successfully",
+    visibility: artwork.visibility,
+  });
+});
+
+/**
  * @desc    get artworks for artist profile
  * @route   GET /api/artwork/getArtworksByArtistId
  * @params  artistId ( for not artist itself )
@@ -358,12 +390,18 @@ exports.getArtworksByArtistId = asyncHandler(async (req, res, next) => {
   const artistId = req.body.artistId || req.user._id;
 
   try {
-    const artworks = await Artwork.find({ id_artist: artistId });
+    const artworks = await Artwork.find({
+      id_artist: artistId,
+      isDeletedByOwner: false,
+      Sold:false,
+      visibility: 'public',
+    });
 
     if (!artworks || artworks.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No artworks found for this artist" });
+      return res.status(200).json({
+        message: "No artworks found for this artist",
+        artworks: [],
+      });
     }
 
     res.status(200).json({
@@ -393,5 +431,173 @@ exports.getArtworksByCategory = asyncHandler(async (req, res, next) => {
     });
   } catch (error) {
     next(new HttpError("Failed to retrieve artworks", 500));
+  }
+});
+
+/**
+ * @desc    Add new artwork
+ * @route   POST /api/artwork/signup/addArtwork
+ * @params  title,description,price,imageArtwork,id_category
+ * @access  Private
+ */
+exports.addArtworkSignup = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError("Invalid data", 400));
+  }
+
+  const artistId = req.user._id;
+  const { title, description, price, imageArtwork, id_category } = req.body;
+
+  // Create new artwork instance
+  const newArtwork = new Artwork({
+    title,
+    description,
+    price,
+    imageArtwork,
+    id_category,
+    id_artist: artistId,
+    exclusive: false,
+  });
+  let artwork;
+  // const session = await mongoose.startSession();
+  // session.startTransaction();
+  try {
+    // artwork = await newArtwork.save({ session });
+    artwork = await newArtwork.save();
+  } catch (e) {
+    return next(new HttpError("artwork not saved !", 500));
+  }
+  res.json({
+    msg: "Artwork added successfully",
+    artwork,
+  });
+});
+
+exports.getBoughtArtwork = async (req, res) => {
+  const userId = req.user._id;
+
+  try {
+    const boughtArtworks = await Artwork.find({ Sold: true, Buyer: userId });
+
+    if (!boughtArtworks || boughtArtworks.length === 0) {
+      return res.status(200).json({
+        message: "You have not buy any artworks yet ",
+        artworks: [],
+      });
+    }
+
+    res.json({
+      message: "Retrieved bought artworks successfully.",
+      artworks: boughtArtworks,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to retrieve artworks.",
+      error: error.message || error,
+    });
+  }
+};
+
+exports.artworkPayment = async (req, res) => {
+  const artworkId = req.body.artworkId;
+
+  const url = "https://developers.flouci.com/api/generate_payment";
+  const payload = {
+    app_token: "d01440af-5a3b-4c9f-8567-6c0f964d1ef7",
+    app_secret: "dd3163a3-a4ad-4ec5-8875-e5658b3ef0ff",
+    amount: req.body.amount,
+    accept_card: "true",
+    session_timeout_secs: 1200,
+    success_link: "http://localhost:3000/artwork/success",
+    fail_link: "http://localhost:3000/artwork/fail",
+    developer_tracking_id: "a702c74a-9a4d-4f36-b18d-b76f63b7bef8",
+  };
+
+  const response = await axios.post(url, payload);
+
+  if (response.data && response.data.result && response.data.result.success) {
+    const artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      return res.status(404).send({ msg: "Artwork not found", faild: "vide" });
+    }
+    if (artwork.Sold) {
+      return res
+        .status(400)
+        .send({ msg: "Artwork already sold", faild: "sold" });
+    }
+    if (artwork) {
+      return res.status(200).send({
+        paymentInfo: response.data,
+        artwork,
+      });
+    }
+  }
+};
+
+exports.buyArtwork = async (req, res, next) => {
+  const userId = req.user._id;
+  const artworkId = req.body.artworkId;
+  const paymentId = req.body.paymentId;
+  const url = `https://developers.flouci.com/api/verify_payment/${paymentId}`;
+
+  const response = await axios.get(url, {
+    headers: {
+      "Content-Type": "application/json",
+      apppublic: "d01440af-5a3b-4c9f-8567-6c0f964d1ef7",
+      appsecret: "dd3163a3-a4ad-4ec5-8875-e5658b3ef0ff",
+    },
+  });
+
+  if (response.data && response.data.result.status === "SUCCESS") {
+    const artwork = await Artwork.findById(artworkId);
+
+    artwork.Buyer = userId;
+    artwork.Sold = true;
+    await artwork.save();
+
+    res.send({
+      artwork,
+      success: true,
+      paymentVerif: response.data,
+    });
+  } else {
+    res.status(400).send({
+      message: "Payment verification failed",
+      success: false,
+      paymentVerif: response.data,
+    });
+  }
+};
+
+/**
+ * @desc    Get an artwork by ID
+ * @route   GET /api/artwork/getArtwork/:artworkId
+ * @access  Private
+ */
+exports.getArtwork = asyncHandler(async (req, res, next) => {
+  const { artworkId } = req.params;
+  // console.log(artworkId);
+  try {
+    const artwork = await Artwork.findById(artworkId)
+      .populate({
+        path: "id_category", // Populate the 'id_category' field
+        select: "name", // Select the 'name'
+        // select: 'name -_id' // Select only the 'name' field and exclude the '_id' field
+      })
+      .populate({
+        path: "id_artist",
+        select: "username , profileImage",
+      });
+
+    if (!artwork) {
+      throw new HttpError("Artwork not found", 404);
+    }
+    res.status(200).json({
+      message: "Artwork retrieved successfully",
+      artwork,
+    });
+  } catch (error) {
+    next(new HttpError("Failed to retrieve the artwork", 500));
   }
 });

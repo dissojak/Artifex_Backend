@@ -11,8 +11,8 @@ router.post(
       .isLength({ min: 2, max: 15 })
       .withMessage("Title must be at least 2 characters long"),
     check("description")
-      .isLength({ min: 10, max: 100 })
-      .withMessage("Description must be between 10 and 100 characters long"),
+      .isLength({ min: 10, max: 400 })
+      .withMessage("Description must be between 10 and 400 characters long"),
     check("price").isNumeric().withMessage("Price must be a number"),
     check("imageArtwork")
       .isURL()
@@ -25,18 +25,39 @@ router.post(
   AWC.addArtwork
 );
 
+router.post(
+  "/signup/AddArtwork",
+  [
+    check("title")
+      .isLength({ min: 2, max: 25 })
+      .withMessage("Title must be at least 2 characters long"),
+    check("description")
+      .isLength({ min: 10, max: 400 })
+      .withMessage("Description must be between 10 and 400 characters long"),
+    check("price").isNumeric().withMessage("Price must be a number"),
+    check("imageArtwork")
+      .isURL()
+      .withMessage("ImageArtwork must be a valid URL"),
+    check("id_category")
+      .notEmpty()
+      .withMessage("Category ID must be a valid MongoDB ID"),
+  ],
+  MW.protect,
+  AWC.addArtworkSignup
+);
+
 router.put(
   "/editArtwork/:artworkId",
   (req, res, next) => {
     if (req.body.title) {
       check("title")
-        .isLength({ min: 2, max: 15 })
+        .isLength({ min: 2, max: 25 })
         .withMessage("Title must be at least 2 characters long");
     }
     if (req.body.description) {
       check("description")
-        .isLength({ min: 10, max: 100 })
-        .withMessage("Description must be between 10 and 100 characters long");
+        .isLength({ min: 10, max: 400 })
+        .withMessage("Description must be between 10 and 400 characters long");
     }
     next();
   },
@@ -44,16 +65,28 @@ router.put(
   AWC.editArtwork
 );
 
-router.get("/getArtworks", MW.protect, AWC.getArtworks);
+router.get("/getArtworks", AWC.getArtworks);
 router.get("/getExclusiveArtworks", MW.protect, AWC.getExclusiveArtworks);
 router.delete(
   "/deleteArtworkByAdmin/:artworkId",
   MW.protect,
   AWC.deleteArtworkByAdmin
 );
-router.delete("/deleteArtwork/:artworkId", MW.protect, AWC.deleteArtwork);
-router.get("/getArtworksByArtistId",MW.protect, AWC.getArtworksByArtistId)
-router.get("/getArtworksByCategory",MW.protect, AWC.getArtworksByCategory)
+router.put("/private", MW.protect, AWC.makePrivate);
+router.put("/public", MW.protect, AWC.makePublic);
+router.get(
+  "/visibility/:artworkId",
+  MW.protect,
+  AWC.checkVisibility
+);
+router.delete("/deleteArtwork", MW.protect, AWC.deleteArtwork);
+router.post("/getArtworksByArtistId", MW.protect, AWC.getArtworksByArtistId);
+router.get("/getArtworksByCategory", MW.protect, AWC.getArtworksByCategory);
+router.get("/getBoughtArtwork", MW.protect, AWC.getBoughtArtwork);
 
+router.post("/buyArtwork", MW.protect, AWC.buyArtwork);
+router.post("/artworkPayment", MW.protect, AWC.artworkPayment);
+
+router.get("/getArtwork/:artworkId", MW.protect, AWC.getArtwork);
 
 module.exports = router;

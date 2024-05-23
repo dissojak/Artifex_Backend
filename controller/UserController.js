@@ -38,23 +38,27 @@ exports.signupAdmin = async (req, res, next) => {
  * @access  Public
  */
 exports.authUser = asyncHandler(async (req, res, next) => {
-  const { username, email, pw } = req.body;
+  const { login, pw } = req.body;
   let user;
-  if (username) {
-    const name = username.toLowerCase();
+
+  if (login.includes("@")) {
+    user = await User.findOne({ email: login }).select("+pw");
+  } else {
+    const name = login.toLowerCase();
     user = await User.findOne({ username: name }).select("+pw");
-  } else if (email) {
-    console.log(email);
-    user = await User.findOne({ email }).select("+pw");
   }
 
   if (user && (await user.matchPassword(pw))) {
     GT.generateToken(res, user._id);
-
+    console.log(user);
     res.json({
       _id: user._id,
       username: user.username,
       email: user.email,
+      image:user.profileImage,
+      orderStatus:user.orderStatus,
+      banned:user.banned,
+      userType:user.userType,
     });
   } else {
     return next(new HttpError("Invalid (username|email) ,password", 401));
@@ -64,7 +68,7 @@ exports.authUser = asyncHandler(async (req, res, next) => {
 /**
  * @desc    Register a new user
  * @route   POST /api/user/signup
- * @params  username,email,pw(password),userType,phone_number 
+ * @params  username,email,pw(password),userType,phone_number
  *          instagram,facebook,twitter,linked (optional)
  * @access  Public
  */
@@ -74,7 +78,7 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
     return next(new HttpError("Invalid Inputs, check your data", 422));
   }
 
-  const { username, email, pw, userType,phone_number } = req.body;
+  const { username, email, pw, userType, phone_number } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -95,6 +99,7 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   if (userType === "artist") {
     userData = {
       ...userData,
+      numberOfFollowers: 0,
       phone_number,
       instagram: req.body.instagram,
       twitter: req.body.twitter,
@@ -145,17 +150,22 @@ exports.logoutUser = (req, res) => {
  * @access  Private
  */
 exports.getUserProfile = asyncHandler(async (req, res, next) => {
-  
   const user = await User.findById(req.user._id);
 
   if (user) {
-    res.json({
-      msg: "User profile",
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      createdAt: user.createdAt.toLocaleString(),
-      updatedAt: user.updatedAt.toLocaleString(),
+    res.json({ user });
+  } else {
+    return next(new HttpError("User not found", 404));
+  }
+});
+
+exports.getUser = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ username: req.params.username });
+
+  if (user) {
+    res.status(200).json({
+      msg: "Successfully",
+      user,
     });
   } else {
     return next(new HttpError("User not found", 404));
@@ -324,7 +334,7 @@ exports.getPanier = asyncHandler(async (req, res, next) => {
 
     const artworks = user.panier;
     if (!artworks || artworks.length === 0) {
-      return res.json({ msg: "vide", panier: [] });
+      return res.json({ msg: "vide", artworks: [] });
     }
 
     res.json({
@@ -352,18 +362,61 @@ exports.addArtworkToPanier = asyncHandler(async (req, res, next) => {
       throw new HttpError("User not found", 404);
     }
 
-    // Check if artworkId is valid
     const artwork = await Artwork.findById(artworkId);
     if (!artwork) {
       throw new HttpError("Artwork not found", 404);
     }
 
-    // Add artworkId to the user's panier
+    if (user.panier.includes(artworkId)) {
+      res.status(409).json({ message: "Artwork already in panier" });
+      return;
+    }
+
     user.panier.push(artworkId);
     await user.save();
 
     res.status(200).json({ message: "Artwork added to panier successfully" });
   } catch (error) {
     next(new HttpError("Failed to add artwork to panier", 500));
+  }
+});
+
+
+/**
+ * @desc    delete artwork to panier of user
+ * @route   DELETE /api/user/removeArtworkFromPanier
+ * @param   artworkId
+ * @access  Private
+ */
+exports.removeArtworkFromPanier = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const artworkId = req.body.artworkId;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new HttpError("User not found", 404);
+    }
+
+    // Check if artworkId is valid
+    const artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      throw new HttpError("Artwork not found", 404);
+    }
+
+    // Check if the artwork is already in the user's panier
+    const index = user.panier.indexOf(artworkId);
+    if (index === -1) {
+      res.status(404).json({ message: "Artwork not found in panier" });
+      return;
+    }
+
+    // Remove artworkId from the user's panier
+    user.panier.splice(index, 1);
+    await user.save();
+
+    res.status(200).json({ message: "Artwork removed from panier successfully" });
+  } catch (error) {
+    next(new HttpError("Failed to remove artwork from panier", 500));
   }
 });
