@@ -18,12 +18,18 @@ exports.getClientOrders = asyncHandler(async (req, res, next) => {
   try {
     const orders = await Order.find({ clientId }).populate("artistId");
 
-    if (!orders || orders.length === 0) {
+    if (!orders) {
       return res
         .status(404)
         .json({ message: "No orders found for this client" });
     }
 
+    if (orders.length === 0) {
+      return res.status(200).json({
+        message: "No orders found for this client , he have 0",
+        orders:[],
+      });
+    }
     res.status(200).json({
       message: "Orders retrieved successfully",
       orders,
@@ -54,6 +60,7 @@ exports.getArtistOrders = asyncHandler(async (req, res, next) => {
     if (orders.length === 0) {
       return res.status(200).json({
         message: "No orders found for this artist , he have 0",
+        orders:[],
       });
     }
 
@@ -187,12 +194,26 @@ exports.acceptOrder = asyncHandler(async (req, res, next) => {
 
   await notification.save();
 
+  const artist = await User.findById(order.artistId);
+  if (!artist) {
+    return next(new HttpError("Couldn't find this artist", 422));
+  }
+
+  const date = new Date ();
+  const orderNotificationDetails = {
+    orderId,
+    username: artist.username,
+    profileImage: artist.profileImage,
+    serviceType:order.serviceType,
+    date,
+  };
+
   const clientSocketEntry = socketIds.find(
     (entry) => entry.userId.toString() === order.clientId.toString()
   );
   if (clientSocketEntry) {
     const clientSocketId = clientSocketEntry.socketId;
-    io.to(clientSocketId).emit("orderAccept", { orderId: order._id });
+    io.to(clientSocketId).emit("orderAccept", { orderNotificationDetails });
     console.log(
       "Order acceptance notification sent to client with socket ID",
       clientSocketId
@@ -384,12 +405,26 @@ exports.submitOrder = asyncHandler(async (req, res, next) => {
 
   await notification.save();
 
+  const artist = await User.findById(order.artistId);
+  if (!artist) {
+    return next(new HttpError("Couldn't find this artist", 422));
+  }
+
+  const date = new Date ();
+  const orderNotificationDetails = {
+    orderId,
+    username: artist.username,
+    profileImage: artist.profileImage,
+    serviceType:order.serviceType,
+    date,
+  };
+
   const clientSocketEntry = socketIds.find(
     (entry) => entry.userId.toString() === order.clientId.toString()
   );
   if (clientSocketEntry) {
     const clientSocketId = clientSocketEntry.socketId;
-    io.to(clientSocketId).emit("orderSubmit", { orderId: order._id });
+    io.to(clientSocketId).emit("orderSubmit", { orderNotificationDetails });
     console.log(
       "Order submission notification sent to client with socket ID",
       clientSocketId

@@ -8,7 +8,7 @@ const { calculateScore } = require("./AnalyticsController");
 const axios = require("axios");
 
 /**
- * @desc    Add new artwork
+ * @desc    Add new artwork 
  * @route   POST /api/artwork/addArtwork
  * @params  title,description,price,imageArtwork,id_category
  * @access  Private
@@ -107,6 +107,7 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
       exclusive: false,
       isDeletedByOwner: false,
       Sold: false,
+      status: "approved",
     })
       .populate({
         path: "id_category", // Populate the 'id_category' field
@@ -152,6 +153,106 @@ exports.getArtworks = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * @desc    Get artworks from database
+ * @route   GET /api/artwork/getArtworksForAdmin
+ * @access  Private
+ * @author  Admin
+ */
+exports.getArtworksForAdmin = asyncHandler(async (req, res, next) => {
+  try {
+    const artworks = await Artwork.find({
+      isDeletedByOwner: false,
+      status: "pending",
+    })
+      .populate({
+        path: "id_category", // Populate the 'id_category' field
+        select: "name", // Select the 'name'
+        // select: 'name -_id' // Select only the 'name' field and exclude the '_id' field
+      })
+      .populate({
+        path: "id_artist",
+        select: "username , profileImage",
+      });
+
+    if (!artworks || artworks.length === 0) {
+      return res.status(200).json({
+        message: "No artworks found for this artist",
+        artworks: [],
+      });
+    }
+
+    res.status(200).json({
+      message: "Artworks retrieved successfully",
+      artworks,
+    });
+  } catch (error) {
+    next(new HttpError("Failed to retrieve artworks", 500));
+  }
+});
+
+/**
+ * @desc    Approve an artwork
+ * @route   PUT /api/artwork/approveArtwork
+ * @params  artworkId
+ * @access  Private
+ * @author  Admin
+ */
+exports.approveArtwork = asyncHandler(async (req, res, next) => {
+  const { artworkId, authorisation } = req.body;
+
+  if (!authorisation) {
+    return next(new HttpError("UNAUTHORIZED !", 401));
+  }
+
+  try {
+    const artwork = await Artwork.findById(artworkId);
+
+    if (!artwork) {
+      return next(new HttpError("Artwork not found", 404));
+    }
+
+    artwork.status = "approved";
+    await artwork.save();
+
+    res.status(200).json({
+      message: "Artwork approved successfully",
+      artwork,
+    });
+  } catch (error) {
+    next(new HttpError("Failed to approve artwork", 500));
+  }
+});
+
+/**
+ * @desc    Decline an artwork
+ * @route   PUT /api/artwork/declineArtwork
+ * @params  artworkId
+ * @access  Private
+ * @author  Admin
+ */
+exports.declineArtwork = asyncHandler(async (req, res, next) => {
+  const { artworkId } = req.body;
+
+  try {
+    const artwork = await Artwork.findById(artworkId);
+
+    if (!artwork) {
+      return next(new HttpError("Artwork not found", 404));
+    }
+
+    artwork.status = "declined";
+    await artwork.save();
+
+    res.status(200).json({
+      message: "Artwork declined successfully",
+      artwork,
+    });
+  } catch (error) {
+    next(new HttpError("Failed to decline artwork", 500));
+  }
+});
+
+/**
  * @desc    Get Exclusive Artworks from database
  * @route   GET /api/artwork/getExclusiveArtworks
  * @access  Private
@@ -184,6 +285,24 @@ exports.getExclusiveArtworks = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * @desc    Approve all artworks
+ * @route   PUT /api/artwork/approveAll
+ * @access  Private
+ * @author  SupperAdmin
+ */
+// approveAllArtworks();
+async function approveAllArtworks() {
+  try {
+    const result = await Artwork.updateMany({}, { status: "approved" });
+    console.log(
+      `Successfully updated ${result.nModified} artworks to approved status.`
+    );
+  } catch (error) {
+    console.error("Error updating artworks:", error);
+  }
+}
+
+/**
  * @desc    Delete an artwork
  * @route   DELETE /api/artwork/deleteArtworkByAdmin/:artworkId
  * @params  artworkId
@@ -201,7 +320,7 @@ exports.deleteArtworkByAdmin = asyncHandler(async (req, res, next) => {
 
     await artwork.deleteOne();
 
-    res.json({ msg: "Artwork deleted successfully" });
+    res.status(202).json({ msg: "Artwork deleted successfully" });
   } catch (error) {
     next(new HttpError(`${error.message},Failed to delete artwork`, 500));
   }
@@ -236,7 +355,7 @@ exports.deleteArtwork = asyncHandler(async (req, res, next) => {
       { new: true }
     );
 
-    res.status(200).json({
+    res.status(204).json({
       msg: "Artwork deleted successfully",
       artwork,
     });
@@ -388,14 +507,28 @@ exports.checkVisibility = asyncHandler(async (req, res, next) => {
  */
 exports.getArtworksByArtistId = asyncHandler(async (req, res, next) => {
   const artistId = req.body.artistId || req.user._id;
-
+  const artist = req.body.artistId;
+  const client = req.user._id;
+  const inMuseum = req.body.inMuseum; // it's true or Undefined !
   try {
-    const artworks = await Artwork.find({
-      id_artist: artistId,
-      isDeletedByOwner: false,
-      Sold:false,
-      visibility: 'public',
-    });
+    let artworks;
+    if (artist == client && !inMuseum) {
+      artworks = await Artwork.find({
+        id_artist: artistId,
+        isDeletedByOwner: false,
+        exclusive: false,
+        Sold: false,
+      });
+    } else {
+      artworks = await Artwork.find({
+        id_artist: artistId,
+        isDeletedByOwner: false,
+        Sold: false,
+        exclusive: false,
+        visibility: "public",
+        status: "approved",
+      });
+    }
 
     if (!artworks || artworks.length === 0) {
       return res.status(200).json({
@@ -536,7 +669,9 @@ exports.artworkPayment = async (req, res) => {
 };
 
 exports.buyArtwork = async (req, res, next) => {
-  const userId = req.user._id;
+  const userId = req.user._id ||req.body.userId;
+  // console.log(userId);
+
   const artworkId = req.body.artworkId;
   const paymentId = req.body.paymentId;
   const url = `https://developers.flouci.com/api/verify_payment/${paymentId}`;
@@ -601,3 +736,27 @@ exports.getArtwork = asyncHandler(async (req, res, next) => {
     next(new HttpError("Failed to retrieve the artwork", 500));
   }
 });
+
+const trimArtworkDescriptions = async () => {
+  try {
+    // Find all artworks
+    const artworks = await Artwork.find();
+
+    // Loop through each artwork and update the description
+    for (const artwork of artworks) {
+      if (artwork.description.length > 250) {
+        artwork.description = artwork.description.slice(0, 250);
+        await artwork.save();
+      }
+    }
+
+    res.status(200).json({
+      msg: "All artwork descriptions updated successfully",
+    });
+  } catch (error) {
+    console.log("Failed to update artwork descriptions", 500);
+  }
+};
+
+// trim description on all the artworks
+// trimArtworkDescriptions();
